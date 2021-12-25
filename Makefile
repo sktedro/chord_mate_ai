@@ -5,3 +5,6 @@ all:
 
 sample: 
 	python3 ${SCRIPT} sample.wav
+
+init: 
+	python3 ${SCRIPT} init

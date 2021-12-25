@@ -1,3 +1,9 @@
+import os
+# Disable the GPU because of tensorflow
+os.environ["CUDA_VISIBLE_DEVICES"] = ""
+import tensorflow as tf
+from tensorflow import keras
+from tensorflow.keras import layers
 from pydub import AudioSegment
 from scipy.io import wavfile
 from scipy import signal
@@ -8,9 +14,10 @@ import matplotlib.pyplot as plt
 import matplotlib
 import wave
 
-fftWidth = 4096
+fftWidth = 8192
 fftStep = 2048
-# With sample rate 44100, this makes the FFT accuracy around 10Hz
+# With sample rate 44100, this makes the FFT accuracy around 5Hz
+
 
 ###############
 ## FUNCTIONS ##
@@ -57,6 +64,40 @@ def plotSignal(samples, duration):
     #  plt.title("One frame")
     plt.show()
 
+
+# TODO Convert magnitudes received from FFT to tones and their magnitudes
+# (Returns a 2D array: [ exact tone frequency, magnitude ])
+
+
+# Layers:
+# Input layer: 
+    # Inputs: Magnitudes of tones (A0, A#0, ..., G#0, A1, ..., G#7)
+    # Inputs amount: 12 * 8 = 96
+# Output layer:
+    # Outputs: Chords (A, A#, ..., G)(major, minor, 7, 5, ...)
+    # Outputs amount: 12 * 12 = 144
+# TODO Also input some history or metadata?
+def newModel():
+    inputNodes = 96
+    outputNodes = 144
+
+    model = keras.Sequential()
+
+    model.add(keras.Input(shape=(inputNodes, )))
+    model.add(keras.layers.Dense(outputNodes, activation="relu"))
+
+    model.compile(optimizer="adam", loss="mean_squared_error")
+
+    randomInput = np.array([np.random.random(inputNodes)])
+    randomPredict = model.predict(randomInput)
+    #  print("Input shape:", randomInput.shape, ", output shape:", randomPredict.shape)
+
+    return model
+
+def saveModel(model):
+    model.save("./nn/")
+
+
 ##########
 ## MAIN ##
 ##########
@@ -64,8 +105,20 @@ def plotSignal(samples, duration):
 def main():
     print("==================================================")
 
-    ## Read the input audio file
+    # Whatever the user does, he needs to specify at least one argument
+    argsCount = len(sys.argv)
+    if argsCount < 2:
+        print("ERROR: Please specify an audio file or a special command")
+        quit(1)
 
+    # Create and save a new model if the user wants to
+    if sys.argv[1] == "init":
+        model = newModel()
+        saveModel(model)
+        print("New model created and saved. Please run without init now.")
+        quit(0)
+
+    # Get the file and convert it to WAV if needed
     fileName = sys.argv[1]
     if not "wav" in fileName:
         # If it is a mp3, convert it to a wav
@@ -76,6 +129,7 @@ def main():
             print("ERROR: The input audio file must be a mp3 or a wav file")
             quit(1)
 
+    # Read the data from the file
     sampleRate, samples = wavfile.read("./audio/" + fileName)
     sampleCount = len(samples)
     audioLength = sampleCount / sampleRate
@@ -111,6 +165,7 @@ def main():
 
     # Plot the result
     #  plotDft(frequencies, magnitudes[50])
+
 
 
 ###############
