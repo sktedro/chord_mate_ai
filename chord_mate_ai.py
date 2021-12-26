@@ -66,31 +66,43 @@ def plotSignal(samples, duration):
     plt.show()
 
 
-#  def getHighestMinIndex(n, arr):
-
-#  def getLowestMaxIndex(n, arr):
-
 def getNoteFreqs():
-    #                  C0     C#0    D0     D#0    E0     F0     F#0    G0
-    notes = np.array([ 16.35, 17.32, 18.35, 19.45, 20.60, 21.83, 23.12, 24.50, 
-    #   G#0    A0     A#0    B0
-        25.96, 27.50, 29.14, 30.87 ])
-    #  print(notes)
-
     # TODO Discard the notes of order 0 as the resolution is too low here? 
     # Maybe even order 1? Or distribute the magnitudes later?
-    for i in range(7):
-        notes = np.concatenate((notes, notes[i * 12: (i + 1) * 12] * 2))
-        print(notes[i * 12: (i + 1) * 12] * 2)
 
-    return notes
+    notes = np.array([
+        "C0", "C#0", "D0", "D#0", "E0", "F0", 
+        "F#0", "G0", "G#0", "A0", "A#0", "B0"])
+
+    noteFreqs = np.array([
+    #       C0     C#0    D0     D#0
+            16.35, 17.32, 18.35, 19.45, 
+    #       E0     F0     F#0    G0
+            20.60, 21.83, 23.12, 24.50, 
+    #       G#0    A0     A#0    B0
+            25.96, 27.50, 29.14, 30.87 ])
+
+    # Finish the notes and noteFreqs sequences (we have them for order 0, we
+    # need them for orders 0 to 7)
+    for i in range(7):
+        notes = np.concatenate((notes, np.char.replace(notes[0: 12], "0", str(i + 1))))
+        noteFreqs = np.concatenate((noteFreqs, noteFreqs[i * 12: (i + 1) * 12] * 2))
+
+    #  print("Notes: ")
+    #  print(notes)
+
+    #  print("Notes frequencies: ")
+    #  for i in range(8):
+        #  print(noteFreqs[i * 12: (i + 1) * 12])
+
+    return notes, noteFreqs
 
 
 # Convert magnitudes received from FFT to notes and their magnitudes
 # (Returns a 2D array: [ exact note frequency, magnitude ])
 def getToneMagnitudes(ffts, frequencies, resolution):
     output = []
-    notes = getNoteFreqs()
+    notes, noteFreqs = getNoteFreqs()
     spread = resolution / 2
     
     # Edit ffts and frequencies to only go to 5kHz. We don't need to
@@ -100,7 +112,7 @@ def getToneMagnitudes(ffts, frequencies, resolution):
 
     # For each frame passed to the FFT
     for fft in ffts:
-        mags = np.zeros(len(notes))
+        mags = np.zeros(len(noteFreqs))
 
         # For each frequency contained in the FFT output
         for i in range(len(frequencies)):
@@ -118,8 +130,8 @@ def getToneMagnitudes(ffts, frequencies, resolution):
             # Save indices of those notes, of which frequencies are contained 
             # in the fft sample
             notesContained = []
-            startIndex = np.where(notes >= lowerBound)[0]
-            endIndex = np.where(notes <= upperBound)[0]
+            startIndex = np.where(noteFreqs >= lowerBound)[0]
+            endIndex = np.where(noteFreqs <= upperBound)[0]
             if len(startIndex) and len(endIndex):
                 startIndex = startIndex[0]
                 endIndex = endIndex[-1]
@@ -137,7 +149,7 @@ def getToneMagnitudes(ffts, frequencies, resolution):
         # Append mags for this FFT result (of one frame)
         output.append(mags)
 
-    return notes, np.array(output)
+    return notes, noteFreqs, np.array(output)
 
 
 # Layers:
@@ -167,6 +179,22 @@ def newModel():
 
 def saveModel(model):
     model.save("./nn/")
+
+def getChordsStringsArray():
+    major = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
+    minor = [major + "m" for major in major]
+    seventh = [major + "7" for major in major]
+    fifth = [major + "5" for major in major]
+    dim = [major + "dim" for major in major]
+    dim7 = [major + "dim7" for major in major]
+    aug = [major + "aug" for major in major]
+    sus2 = [major + "sus2" for major in major]
+    sus4 = [major + "sus4" for major in major]
+    maj7 = [major + "maj7" for major in major]
+    m7 = [major + "m7" for major in major]
+    seventhsus4 = [major + "7sus4" for major in major]
+    return major + minor + seventh + fifth + dim + dim7 + aug + sus2 + sus4 + maj7 + m7 + seventhsus4
+    #  return major + minor + seventh
 
 
 ##########
@@ -236,21 +264,39 @@ def main():
     # Discrete fourier transform
     magnitudes, frequencies = transformSignal(frames, sampleRate)
 
-    # Normalize the FFT output: all magnitudes should have a sum of 1
-    for mags in magnitudes:
-        mean = sum(mags) / len(mags)
-        mags /= mean
+    # Normalize the FFT output (energy needs to be preserved)
+    # 64 here is just a magic number so the numbers are below 0
+    magnitudes /= fftWidth / 64
 
     # Plot the result
     #  plotDft(frequencies, magnitudes[50])
 
     # Get tones and their magnitudes (2 arrays: tone frequencies and magnitudes)
-    toneFreqs, toneMags = getToneMagnitudes(magnitudes, frequencies, resolution)
+    notes, noteFreqs, noteMags = getToneMagnitudes(magnitudes, frequencies, resolution)
+    #  print(noteMags[50])
 
+    # Load the neural network (tf model)
+    model = tf.keras.models.load_model("./nn/")
 
-    # Training
-    # Load the nsynth dataset
-    #  ds = tfds.load("nsynth", data_dir="data")
+    # Pass the noteMags to the neural network to get the chord for each frame
+    predictions = model.predict(noteMags)
+    #  print(predictions)
+
+    # Get chords strings in the same array that the predictions are
+    chordsStrings = getChordsStringsArray()
+
+    # Print the predicted chords
+    print("Predictions: ")
+    lastIndex = -1
+    for i in range(len(predictions)):
+        confidence = max(predictions[i])
+        chordIndex = np.where(predictions[i] == confidence)[0][0]
+        if chordIndex != lastIndex:
+            fromTime = sampleToTime(i * fftStep, sampleRate)
+            print("From ", "{:.2f}".format(fromTime) + "s:",
+                "chord ", chordsStrings[chordIndex].ljust(7), 
+                " with confidence of ", str(int(confidence * 100)) + "%")
+            lastIndex = chordIndex
 
 
 ###############
