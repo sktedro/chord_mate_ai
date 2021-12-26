@@ -23,8 +23,12 @@ import subprocess
 fftWidth = 8192
 fftStep = 2048
 # With sample rate 44100, this makes the FFT accuracy around 5Hz
+# TODO Make it adaptive to the sampling frequency? Or don't accept files with
+# Fs other than 44100?
 
 chordsPath = "./audio/chords"
+audioPath = "./audio"
+modelPath = "./nn/"
 
 ###############
 ## FUNCTIONS ##
@@ -43,15 +47,15 @@ def getFrames(samples, sampleCount):
     frames = []
     for i in range(sampleCount // fftStep - 1):
         frames.append(samples[i * fftStep : i * fftStep + fftWidth])
-    print("We have", len(frames), "frames, all with length", len(frames[0]))
+    #  print("We have", len(frames), "frames, all with length", len(frames[0]))
     return frames
 
 def transformSignal(frames, sampleRate):
-    print("Calculating the DFT")
+    #  print("Calculating the DFT")
     # FFT
     magnitudes = abs(np.array([np.fft.fft(frames[k])[0: fftWidth // 2] for k in range(len(frames))]))
     frequencies = [k * sampleRate // fftWidth for k in range(fftWidth // 2)]
-    print("DFT calculated")
+    #  print("DFT calculated")
     return magnitudes, frequencies
 
 def plotDft(frequencies, magnitudes):
@@ -184,7 +188,7 @@ def newModel():
     return model
 
 def saveModel(model):
-    model.save("./nn/")
+    model.save(modelPath)
 
 def getChordsStringsArray():
     major = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
@@ -231,6 +235,7 @@ def main():
         train = True
         inputFiles = ls(chordsPath)
     else:
+        train = False
         inputFiles = [sys.argv[1]]
 
     # Get chords strings in the same array that the predictions are
@@ -254,15 +259,17 @@ def main():
                 quit(1)
 
         # Read the data from the file
-        sampleRate, samples = wavfile.read(chordsPath + "/" + inputFile)
+        if train:
+            path = chordsPath + "/" + inputFile
+        else:
+            path = audioPath + "/" + inputFile
+        sampleRate, samples = wavfile.read(path)
         sampleCount = len(samples)
         audioLength = sampleCount / sampleRate
         resolution = sampleRate / fftWidth
 
-        print("Sample rate: ", sampleRate)
-        print("Amount of samples: ", sampleCount)
-        print("Audio length [s]: ", audioLength)
-        print("Resolution of the FFT: ", resolution)
+        print("Sample rate: ", sampleRate, ", resolution of the FFT: ", "{:.2f}".format(resolution))
+        print("Amount of samples: ", sampleCount, ", audio length [s]: ", "{:.2f}".format(audioLength))
 
         # If the audio is stereo, convert it to mono
         if len(samples.shape) == 2:
@@ -315,8 +322,9 @@ def main():
                 nnOutputs.append(output)
 
     # Load the neural network (tf model)
-    model = tf.keras.models.load_model("./nn/")
+    model = tf.keras.models.load_model(modelPath)
 
+    # Train
     if train:
         nnInputs = np.array(nnInputs)
         nnOutputs = np.array(nnOutputs)
@@ -325,6 +333,8 @@ def main():
         model.fit(nnInputs, nnOutputs, batch_size=100, epochs=5, shuffle=True)
         # Save the model
         saveModel(model)
+
+    # Predict
     else:
         # Pass the noteMags to the neural network to get the chord for each frame
         predictions = model.predict(noteMags)
