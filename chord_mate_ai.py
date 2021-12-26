@@ -1,7 +1,8 @@
 import os
 # Disable the GPU because of tensorflow
-os.environ["CUDA_VISIBLE_DEVICES"] = ""
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 import tensorflow as tf
+import tensorflow_datasets as tfds
 from tensorflow import keras
 from tensorflow.keras import layers
 from pydub import AudioSegment
@@ -59,14 +60,70 @@ def sampleToTime(sampleNum, sampleRate):
 
 def plotSignal(samples, duration):
     plt.plot(np.arange(0, duration, duration / len(samples)), samples)
-    #  plt.ylabel("Amplitude []")
-    #  plt.xlabel("Time [s]")
-    #  plt.title("One frame")
+    plt.ylabel("Amplitude []")
+    plt.xlabel("Time [s]")
+    plt.title("One frame")
     plt.show()
+
+
+#  def getHighestMinIndex(n, arr):
+
+#  def getLowestMaxIndex(n, arr):
 
 
 # TODO Convert magnitudes received from FFT to tones and their magnitudes
 # (Returns a 2D array: [ exact tone frequency, magnitude ])
+def getToneMagnitudes(ffts, frequencies, resolution):
+    #                  C0     C#0    D0     D#0    E0     F0     F#0    G0
+    notes = np.array([ 16.35, 17.32, 18.35, 19.45, 20.60, 21.83, 23.12, 24.50, 
+    #   G#0    A0     A#0    B0
+        25.96, 27.50, 29.14, 30.87 ])
+    #  print(notes)
+
+    output = []
+
+    # TODO Discard the notes of order 0 as the resolution is too low here? 
+    # Maybe even order 1? Or distribute the magnitudes later?
+    for i in range(7):
+        notes = np.concatenate((notes, notes[i * 12: (i + 1) * 12] * 2))
+        #  print(notes[i * 12: (i + 1) * 12] * 2)
+
+    # For each frame passed to the FFT
+    for fft in ffts:
+        mags = np.zeros(len(notes))
+
+        # For each frequency contained in the FFT output
+        for i in range(len(frequencies)):
+            # https://dsp.stackexchange.com/questions/26927/what-is-a-frequency-bin
+            # https://stackoverflow.com/questions/10754549/fft-bin-width-clarification
+            # Both these sources say that the fft coeff represents the center
+            # of a frequency bin
+            lowerBound = frequencies[i] - resolution / 2
+            upperBound = frequencies[i] + resolution / 2
+            mag = fft[i]
+
+            # If the frequency is within resolution/2 of a note, copy the magnitude
+            # Watch out if it is within resolution/2 of several notes - in that
+            # case, distribute it over all of them
+
+            # Save indices of those notes, of which frequencies are contained 
+            # in the fft sample
+            notesContained = []
+            for j in range(len(notes)):
+                if notes[j] > lowerBound and notes[j] < upperBound:
+                    notesContained.append(j)
+
+            # Add to the note magnitude(s)
+            for index in notesContained:
+                mags[index] += mag / len(notesContained)
+
+        # Append mags for this FFT result (of one frame)
+        output.append(mags)
+
+    output = np.array(output)
+    print(output.shape)
+    print(output[50])
+    return notes, output
 
 
 # Layers:
@@ -133,10 +190,12 @@ def main():
     sampleRate, samples = wavfile.read("./audio/" + fileName)
     sampleCount = len(samples)
     audioLength = sampleCount / sampleRate
+    resolution = sampleRate / fftWidth
 
     print("Sample rate: ", sampleRate)
     print("Amount of samples: ", sampleCount)
     print("Audio length [s]: ", audioLength)
+    print("Resolution of the FFT: ", resolution)
 
     # If the audio is stereo, convert it to mono
     if len(samples.shape) == 2:
@@ -163,9 +222,19 @@ def main():
     # Discrete fourier transform
     magnitudes, frequencies = transformSignal(frames, sampleRate)
 
+    # Normalize the FFT output: all magnitudes should have a sum of 1
+    for mags in magnitudes:
+        mean = sum(mags) / len(mags)
+        mags /= mean
+
     # Plot the result
     #  plotDft(frequencies, magnitudes[50])
 
+    # Get tones and their magnitudes (2 arrays: tone frequencies and magnitudes)
+    toneFreqs, toneMags = getToneMagnitudes(magnitudes, frequencies, resolution)
+
+    # Load the nsynth dataset
+    #  ds = tfds.load("nsynth", data_dir="data")
 
 
 ###############
