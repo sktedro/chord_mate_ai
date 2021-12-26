@@ -122,6 +122,14 @@ def getPitchClassesOfNotesInChord(chordType):
     elif chordType == "maj7":
         return [0, 4, 7, 11]
 
+    # Minor seventh chord (Cm7, C-7)
+    elif chordType == "m7":
+        return [0, 3, 7, 10]
+
+    # Seventh suspended chord (C7sus4)
+    # TODO this might be wrong!
+    elif chordType == "7sus4":
+        return [0, 5, 7, 10]
 
 
 def getNotesInChord(chord, chordType, order):
@@ -145,7 +153,7 @@ def getNotesInChord(chord, chordType, order):
         # Now we can compose the note
         outputNotes.append(notes[index] + str(noteOrder))
 
-    print(outputNotes)
+    print("Notes to generate: ", outputNotes)
     return outputNotes
 
 
@@ -179,13 +187,13 @@ def main():
         #  chord = chords[np.random.randint(len(chords))] + targets[np.random.randint(len(targets))]
         plainChord, chordType = pickChord(chords, targets)
         chord = plainChord + chordType
-        print("Generating", chord)
+        print("Chord picked: ", chord)
 
         # Randomly pick an instrument
         instrument = instruments[np.random.randint(len(instruments))]
         print("Instrument picked: ", instrument)
 
-        # TODO Randomly pick an order
+        # TODO Randomly pick an order (up to 7 - excluding 8)
         order = 2
 
         # Get a list of notes contained in the picked chord
