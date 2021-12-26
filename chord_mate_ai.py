@@ -70,23 +70,33 @@ def plotSignal(samples, duration):
 
 #  def getLowestMaxIndex(n, arr):
 
-
-# TODO Convert magnitudes received from FFT to tones and their magnitudes
-# (Returns a 2D array: [ exact tone frequency, magnitude ])
-def getToneMagnitudes(ffts, frequencies, resolution):
+def getNoteFreqs():
     #                  C0     C#0    D0     D#0    E0     F0     F#0    G0
     notes = np.array([ 16.35, 17.32, 18.35, 19.45, 20.60, 21.83, 23.12, 24.50, 
     #   G#0    A0     A#0    B0
         25.96, 27.50, 29.14, 30.87 ])
     #  print(notes)
 
-    output = []
-
     # TODO Discard the notes of order 0 as the resolution is too low here? 
     # Maybe even order 1? Or distribute the magnitudes later?
     for i in range(7):
         notes = np.concatenate((notes, notes[i * 12: (i + 1) * 12] * 2))
-        #  print(notes[i * 12: (i + 1) * 12] * 2)
+        print(notes[i * 12: (i + 1) * 12] * 2)
+
+    return notes
+
+
+# Convert magnitudes received from FFT to notes and their magnitudes
+# (Returns a 2D array: [ exact note frequency, magnitude ])
+def getToneMagnitudes(ffts, frequencies, resolution):
+    output = []
+    notes = getNoteFreqs()
+    spread = resolution / 2
+    
+    # Edit ffts and frequencies to only go to 5kHz. We don't need to
+    # iterate over all of them
+    frequencies = [f for f in frequencies if f < 5000]
+    ffts = [fft[0: len(frequencies)] for fft in ffts]
 
     # For each frame passed to the FFT
     for fft in ffts:
@@ -98,9 +108,8 @@ def getToneMagnitudes(ffts, frequencies, resolution):
             # https://stackoverflow.com/questions/10754549/fft-bin-width-clarification
             # Both these sources say that the fft coeff represents the center
             # of a frequency bin
-            lowerBound = frequencies[i] - resolution / 2
-            upperBound = frequencies[i] + resolution / 2
-            mag = fft[i]
+            lowerBound = frequencies[i] - spread 
+            upperBound = frequencies[i] + spread 
 
             # If the frequency is within resolution/2 of a note, copy the magnitude
             # Watch out if it is within resolution/2 of several notes - in that
@@ -109,21 +118,26 @@ def getToneMagnitudes(ffts, frequencies, resolution):
             # Save indices of those notes, of which frequencies are contained 
             # in the fft sample
             notesContained = []
-            for j in range(len(notes)):
-                if notes[j] > lowerBound and notes[j] < upperBound:
-                    notesContained.append(j)
+            startIndex = np.where(notes >= lowerBound)[0]
+            endIndex = np.where(notes <= upperBound)[0]
+            if len(startIndex) and len(endIndex):
+                startIndex = startIndex[0]
+                endIndex = endIndex[-1]
+                if endIndex >= startIndex:
+                    notesContained = np.arange(startIndex, endIndex + 1, 1)
 
-            # Add to the note magnitude(s)
-            for index in notesContained:
-                mags[index] += mag / len(notesContained)
+            # Add the magnitude to the note frequency (frequencies defined by
+            # notesContained)
+            if len(notesContained) > 0:
+                mag = fft[i] / len(notesContained)
+                # Add to the note magnitude(s)
+                for index in notesContained:
+                    mags[index] += mag 
 
         # Append mags for this FFT result (of one frame)
         output.append(mags)
 
-    output = np.array(output)
-    print(output.shape)
-    print(output[50])
-    return notes, output
+    return notes, np.array(output)
 
 
 # Layers:
@@ -233,6 +247,8 @@ def main():
     # Get tones and their magnitudes (2 arrays: tone frequencies and magnitudes)
     toneFreqs, toneMags = getToneMagnitudes(magnitudes, frequencies, resolution)
 
+
+    # Training
     # Load the nsynth dataset
     #  ds = tfds.load("nsynth", data_dir="data")
 
