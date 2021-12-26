@@ -21,6 +21,13 @@ mixOrders = False
 mixInstruments = False
 
 
+######################
+## GLOBAL VARIABLES ##
+######################
+
+notes = ["A", "A#", "B", "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#"] * 2
+
+
 ###############
 ## FUNCTIONS ##
 ###############
@@ -133,7 +140,6 @@ def getPitchClassesOfNotesInChord(chordType):
 
 
 def getNotesInChord(chord, chordType, order):
-    notes = ["A", "A#", "B", "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#"] * 2
 
     rootIndex = notes.index(chord)
 
@@ -156,6 +162,24 @@ def getNotesInChord(chord, chordType, order):
     print("Notes to generate: ", outputNotes)
     return outputNotes
 
+def getNoteSynonyms(note):
+    order = note[-1]
+    note = note[0: -1]
+    noteIndexLeft = notes.index(note)
+    noteIndexRight = noteIndexLeft + 12
+    output = []
+    # eg. for input B: Append B
+    output.append(notes[noteIndexLeft] + order)
+    # Append A##
+    output.append(notes[noteIndexRight - 1] + "#" + order)
+    # Append Cb
+    output.append(notes[noteIndexLeft + 1] + "b" + order)
+
+    # Discard notes containing ## and #b
+    output = [n for n in output if "##" not in n and "#b" not in n]
+    # Discard duplicates
+    output = list(dict.fromkeys(output))
+    return output
 
 ##########
 ## MAIN ##
@@ -164,7 +188,6 @@ def getNotesInChord(chord, chordType, order):
 def main():
 
     amount, targets = handleArguments()
-    chords = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
 
     # Get all instruments (folders in notesPath)
     instruments = ls(notesPath)
@@ -173,36 +196,58 @@ def main():
     notesFiles = []
     for instrument in instruments:
         notesFiles.append(ls(notesPath + "/" + instrument))
-    # Filter out ones that don't end with .wav
-    #  for i in range(len(notesFiles)):
-        #  notesFiles[i] = [note for note in notesFiles[i] if ".wav" in note]
-
-
-
 
     # For amount
     for i in range(amount):
 
-        # Randomly pick a chord (from len(targets) * len(chords) combinations)
-        #  chord = chords[np.random.randint(len(chords))] + targets[np.random.randint(len(targets))]
-        plainChord, chordType = pickChord(chords, targets)
+        # Randomly pick a chord (from len(targets) * len(notes) combinations)
+        plainChord, chordType = pickChord(notes, targets)
         chord = plainChord + chordType
         print("Chord picked: ", chord)
 
         # Randomly pick an instrument
         instrument = instruments[np.random.randint(len(instruments))]
+        instrument = "acoustic_guitar_steel-mp3" # TODO remove
         print("Instrument picked: ", instrument)
 
-        # TODO Randomly pick an order (up to 7 - excluding 8)
-        order = 2
+        # Randomly pick an order (up to 7 - excluding 8)
+        order = np.random.randint(0, 8)
+        order = 2 # TODO remove
 
         # Get a list of notes contained in the picked chord
         useNotes = getNotesInChord(plainChord, chordType, order)
 
-        # Filter the note files to ones contained in the picked chord
+        # Filter the notes files to ones of the instrument picked
         useNotesFiles = notesFiles[instruments.index(instrument)]
 
-        # Sort the note files into arrays based on their notes
+        # !! Gb is the same as F# and so on! It needs to be accepted
+        useNotes = [getNoteSynonyms(note) for note in useNotes]
+
+        # Filter the note files to ones contained in the picked chord
+        useNotesFilesBackup = useNotesFiles
+        useNotesFiles = []
+        for noteSynonyms in useNotes:
+            actNoteFiles = []
+            for note in noteSynonyms:
+                for noteFile in useNotesFilesBackup:
+                    if note in noteFile:
+                        actNoteFiles.append(noteFile)
+            if len(actNoteFiles):
+                useNotesFiles.append(actNoteFiles)
+        print("Files to choose from: ", useNotesFiles)
+
+        # If it is a mp3 file, check if there is a wav with the same name. If
+        # not, convert it to a wav file with the same name
+        for actNotesFiles in useNotesFiles:
+            for fileName in actNotesFiles:
+                if ".mp3" in fileName:
+                    if not fileName.replace(".mp3", ".wav") in actNotesFiles:
+                        # Convert the mp3 to wav
+                        path = notesPath + "/" + instrument + "/" + fileName
+                        print("Converting", fileName, "to wav")
+                        subprocess.call(["ffmpeg", "-loglevel", "error",
+                                "-i", path, path.replace(".mp3", ".wav")])
+
 
         # If mixOrders == False, randomly pick a note order and filter out
         # all notes that cannot be used in the final chord
