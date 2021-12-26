@@ -14,11 +14,17 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib
 import wave
+import subprocess
+
+##############
+## SETTINGS ##
+##############
 
 fftWidth = 8192
 fftStep = 2048
 # With sample rate 44100, this makes the FFT accuracy around 5Hz
 
+chordsPath = "./audio/chords"
 
 ###############
 ## FUNCTIONS ##
@@ -99,7 +105,7 @@ def getNoteFreqs():
 
 
 # Convert magnitudes received from FFT to notes and their magnitudes
-# (Returns a 2D array: [ exact note frequency, magnitude ])
+# (Returns three arrays: notes, exact notes frequencies, magnitude )
 def getToneMagnitudes(ffts, frequencies, resolution):
     output = []
     notes, noteFreqs = getNoteFreqs()
@@ -196,6 +202,10 @@ def getChordsStringsArray():
     return major + minor + seventh + fifth + dim + dim7 + aug + sus2 + sus4 + maj7 + m7 + seventhsus4
     #  return major + minor + seventh
 
+def ls(path):
+    return subprocess.run(["ls", path], stdout=subprocess.PIPE).stdout.decode('utf-8').split("\n")[0: -1]
+
+
 
 ##########
 ## MAIN ##
@@ -217,91 +227,125 @@ def main():
         print("New model created and saved. Please run without init now.")
         quit(0)
 
-    # Get the file and convert it to WAV if needed
-    fileName = sys.argv[1]
-    if not "wav" in fileName:
-        # If it is a mp3, convert it to a wav
-        if "mp3" in fileName:
-            fileName = fileName.replace("mp3", "wav")
-            AudioSegment.from_mp3(sys.argv[1]).export(fileName, format = "wav")
-        else:
-            print("ERROR: The input audio file must be a mp3 or a wav file")
-            quit(1)
-
-    # Read the data from the file
-    sampleRate, samples = wavfile.read("./audio/" + fileName)
-    sampleCount = len(samples)
-    audioLength = sampleCount / sampleRate
-    resolution = sampleRate / fftWidth
-
-    print("Sample rate: ", sampleRate)
-    print("Amount of samples: ", sampleCount)
-    print("Audio length [s]: ", audioLength)
-    print("Resolution of the FFT: ", resolution)
-
-    # If the audio is stereo, convert it to mono
-    if len(samples.shape) == 2:
-        channels = samples.shape[1]
-        samples = np.transpose(samples)
-        tmp = np.zeros(len(samples[0]))
-        for i in range(channels):
-            tmp += samples[i]
-        tmp /= channels
-        samples = np.transpose(tmp)
-
-    # Plot the input signal
-    #  plotSignal(samples, audioLength)
-
-    # Normalize the data
-    normSamples = normalizeSamples(samples, sampleCount)
-
-    # Get frames
-    frames = getFrames(normSamples, sampleCount)
-
-    # Plot one of the frames
-    #  plotSignal(frames[24], audioLength)
-
-    # Discrete fourier transform
-    magnitudes, frequencies = transformSignal(frames, sampleRate)
-
-    # Normalize the FFT output (energy needs to be preserved)
-    # 64 here is just a magic number so the numbers are below 0
-    magnitudes /= fftWidth / 64
-
-    # Plot the result
-    #  plotDft(frequencies, magnitudes[50])
-
-    # Get tones and their magnitudes (2 arrays: tone frequencies and magnitudes)
-    notes, noteFreqs, noteMags = getToneMagnitudes(magnitudes, frequencies, resolution)
-    #  print(noteMags[50])
-
-    # Load the neural network (tf model)
-    model = tf.keras.models.load_model("./nn/")
-
-    # Pass the noteMags to the neural network to get the chord for each frame
-    predictions = model.predict(noteMags)
-    #  print(predictions)
+    if sys.argv[1] == "train":
+        train = True
+        inputFiles = ls(chordsPath)
+    else:
+        inputFiles = [sys.argv[1]]
 
     # Get chords strings in the same array that the predictions are
     chordsStrings = getChordsStringsArray()
 
-    # Print the predicted chords
-    print("Predictions: ")
-    lastIndex = -1
-    for i in range(len(predictions)):
-        confidence = max(predictions[i])
-        chordIndex = np.where(predictions[i] == confidence)[0][0]
-        if chordIndex != lastIndex:
-            fromTime = sampleToTime(i * fftStep, sampleRate)
-            print("From ", "{:.2f}".format(fromTime) + "s:",
-                "chord ", chordsStrings[chordIndex].ljust(7), 
-                " with confidence of ", str(int(confidence * 100)) + "%")
-            lastIndex = chordIndex
+    # Data that will be fed to the NN:
+    nnInputs = []
+    nnOutputs = []
 
-    print("Downloading")
-    ds = tfds.load('nsynth', download = False, shuffle_files = True,
-            data_dir='/media/tedro/#2/a_only_on_external/d_projekty/ai/chord_mate_ai/nsynth/')
-    print("Downloaded")
+    for inputFile in inputFiles:
+        print("Processing file", inputFiles.index(inputFile) + 1, "of", len(inputFiles))
+
+        # Get the file and convert it to WAV if needed
+        if not "wav" in inputFile:
+            # If it is a mp3, convert it to a wav
+            if "mp3" in inputFile:
+                inputFile = inputFile.replace("mp3", "wav")
+                AudioSegment.from_mp3(sys.argv[1]).export(inputFile, format = "wav")
+            else:
+                print("ERROR: The input audio file must be a mp3 or a wav file")
+                quit(1)
+
+        # Read the data from the file
+        sampleRate, samples = wavfile.read(chordsPath + "/" + inputFile)
+        sampleCount = len(samples)
+        audioLength = sampleCount / sampleRate
+        resolution = sampleRate / fftWidth
+
+        print("Sample rate: ", sampleRate)
+        print("Amount of samples: ", sampleCount)
+        print("Audio length [s]: ", audioLength)
+        print("Resolution of the FFT: ", resolution)
+
+        # If the audio is stereo, convert it to mono
+        if len(samples.shape) == 2:
+            channels = samples.shape[1]
+            samples = np.transpose(samples)
+            tmp = np.zeros(len(samples[0]))
+            for i in range(channels):
+                tmp += samples[i]
+            tmp /= channels
+            samples = np.transpose(tmp)
+
+        # Plot the input signal
+        #  plotSignal(samples, audioLength)
+
+        # Normalize the data
+        normSamples = normalizeSamples(samples, sampleCount)
+
+        # Get frames
+        frames = getFrames(normSamples, sampleCount)
+
+        # Plot one of the frames
+        #  plotSignal(frames[24], audioLength)
+
+        # Discrete fourier transform
+        magnitudes, frequencies = transformSignal(frames, sampleRate)
+
+        # Normalize the FFT output (energy needs to be preserved)
+        # 64 here is just a magic number so the numbers are below 0
+        magnitudes /= fftWidth / 64
+
+        # Plot the result
+        #  plotDft(frequencies, magnitudes[50])
+
+        # Get notes and their magnitudes (2 arrays: note frequencies and magnitudes)
+        notes, noteFreqs, noteMags = getToneMagnitudes(magnitudes, frequencies, resolution)
+        #  print(noteMags[50])
+
+        #  if len(nnInputs) == 0:
+            #  nnInputs = noteMags
+        #  else:
+            #  nnInputs = nnInputs + noteMags
+        for i in range(len(noteMags)):
+            nnInputs.append(noteMags[i])
+
+        if train:
+            chordIndex = chordsStrings.index(inputFile.split("_")[1])
+            output = np.zeros(144)
+            output[chordIndex] = 1
+            for i in range(len(noteMags)):
+                nnOutputs.append(output)
+
+    # Load the neural network (tf model)
+    model = tf.keras.models.load_model("./nn/")
+
+    if train:
+        nnInputs = np.array(nnInputs)
+        nnOutputs = np.array(nnOutputs)
+        print("Training with", len(nnInputs), "inputs and", len(nnOutputs), "outputs")
+        # Train the model
+        model.fit(nnInputs, nnOutputs, batch_size=100, epochs=5, shuffle=True)
+        # Save the model
+        saveModel(model)
+    else:
+        # Pass the noteMags to the neural network to get the chord for each frame
+        predictions = model.predict(noteMags)
+        #  print(predictions)
+
+        # Print the predicted chords
+        print("Predictions: ")
+        lastIndex = -1
+        for i in range(len(predictions)):
+            confidence = max(predictions[i])
+            chordIndex = np.where(predictions[i] == confidence)[0][0]
+            if chordIndex != lastIndex:
+                fromTime = sampleToTime(i * fftStep, sampleRate)
+                print("From ", "{:.2f}".format(fromTime) + "s:",
+                    "chord ", chordsStrings[chordIndex].ljust(7), 
+                    " with confidence of ", str(int(confidence * 100)) + "%")
+                lastIndex = chordIndex
+
+
+
+
 
 
 ###############

@@ -9,5 +9,9 @@ sample:
 sample2: 
 	python3 ${SCRIPT} sample2.wav
 
+train:
+	python3 ${SCRIPT} train
+
+
 init: 
 	python3 ${SCRIPT} init
