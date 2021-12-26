@@ -3,10 +3,7 @@ import numpy as np
 import subprocess
 from scipy.io import wavfile
 import matplotlib.pyplot as plt
-import wave
 import struct
-
-
 
 
 ##############
@@ -205,14 +202,16 @@ def main():
 
     # Get all instruments (folders in notesPath)
     instruments = ls(notesPath)
-
-    # Get all notes for each instrument (.wav files in notesPath/instrument)
-    notesFiles = []
-    for instrument in instruments:
-        notesFiles.append(ls(notesPath + "/" + instrument))
+    instruments.remove("0_short")
 
     # For amount
     for i in range(amount):
+
+        # Get all notes for each instrument (.wav files in notesPath/instrument)
+        notesFiles = []
+        for instrument in instruments:
+            notesFiles.append(ls(notesPath + "/" + instrument))
+
 
         # Randomly pick a chord (from len(targets) * len(notes) combinations)
         plainChord, chordType = pickChord(notes, targets)
@@ -221,12 +220,11 @@ def main():
 
         # Randomly pick an instrument
         instrument = instruments[np.random.randint(len(instruments))]
-        instrument = "acoustic_guitar_steel-mp3" # TODO remove
         print("Instrument picked: ", instrument)
 
         # Randomly pick an order (up to 7 - excluding 8)
         order = np.random.randint(0, 8)
-        order = 2 # TODO remove
+        order = np.random.randint(2, 5) # TODO remove
 
         # Get a list of notes contained in the picked chord
         useNotes = getNotesInChord(plainChord, chordType, order)
@@ -248,7 +246,7 @@ def main():
                         actNoteFiles.append(noteFile)
             if len(actNoteFiles):
                 useNotesFiles.append(actNoteFiles)
-        print("Files to choose from: ", useNotesFiles)
+        #  print("Files to choose from: ", useNotesFiles)
 
         # If it is a mp3 file, check if there is a wav with the same name. If
         # not, convert it to a wav file with the same name
@@ -270,9 +268,7 @@ def main():
                     actNotesFiles.append(fileName)
             useNotesFiles.append(actNotesFiles)
 
-        print(useNotesFiles)
         useNotesFiles = chooseNotesFiles(useNotesFiles)
-        print(useNotesFiles)
 
         # Read the files and combine them into one
         signals = []
@@ -280,7 +276,6 @@ def main():
         minLen = float("inf")
         path = notesPath + "/" + instrument + "/"
         for fileName in useNotesFiles:
-            print(path + fileName)
             sampleRate, signal = wavfile.read(path + fileName)
             signals.append(signal)
             sampleRates.append(sampleRate)
@@ -295,29 +290,31 @@ def main():
         # Also make it exactly in a range of a short int
         multiplier = int((32767 / 2) / np.ndarray.max(np.absolute(signal)))
         signal = np.multiply(signal, multiplier)
-        #  print(np.ndarray.max(np.absolute(signal)))
 
         #  plt.plot(signal)
         #  plt.show()
 
         # Figure out a name for the file 
         # (they should be named chord_C_0.wav, chord_C_1.wav, chord_C#m_0.wav, ...)
+        fileName = "chord_" + chord + "_" + instrument + "_"
 
-        fileName = "chord_" + chord + "_"
-
+        # If there is no file with that name, the number following should be
+        # zero. Otherwise, just add 1
         existingFiles = ls(chordsPath)
         existingFiles = [f for f in existingFiles if fileName in f]
-
         if len(existingFiles) == 0:
             fileName += "0"
         else:
-            fileName += str(int(existingFiles[-1].split(".")[0][-1]) + 1)
+            nums = [f.split(".")[0].split("_")[-1] for f in existingFiles]
+            highestNum = max([int(num) for num in nums])
+            fileName += str(highestNum + 1)
 
-        # create chordsPath dir if it does not exist
+        # Create chordsPath dir if it does not exist
         subprocess.call(["mkdir", "-p", chordsPath])
 
         # Write the signal to a file
         wavfile.write(chordsPath + "/" + fileName + ".wav", sampleRate, signal)
+        print("Chord generated to", chordsPath + "/" + fileName + ".wav")
 
 if __name__ == "__main__":
     main()
