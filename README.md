@@ -9,3 +9,9 @@ note that this project may never be finished.
 
 JS attempt: https://github.com/sktedro/chord_recognizer
 
+# Training
+
+## Datasets used (maybe not all of them, but I'd like to mention them all):
+ - https://magenta.tensorflow.org/datasets/nsynth
+ - https://zenodo.org/record/3371780#.Ychwz3XMJQJ
+ - https://github.com/gleitz/midi-js-soundfonts

@@ -298,6 +298,11 @@ def main():
                 " with confidence of ", str(int(confidence * 100)) + "%")
             lastIndex = chordIndex
 
+    print("Downloading")
+    ds = tfds.load('nsynth', download = False, shuffle_files = True,
+            data_dir='/media/tedro/#2/a_only_on_external/d_projekty/ai/chord_mate_ai/nsynth/')
+    print("Downloaded")
+
 
 ###############
 ## MAIN CALL ##

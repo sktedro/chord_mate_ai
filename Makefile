@@ -6,5 +6,8 @@ all:
 sample: 
 	python3 ${SCRIPT} sample.wav
 
+sample2: 
+	python3 ${SCRIPT} sample2.wav
+
 init: 
 	python3 ${SCRIPT} init
