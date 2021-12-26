@@ -1,6 +1,11 @@
 import sys
 import numpy as np
 import subprocess
+from scipy.io import wavfile
+import matplotlib.pyplot as plt
+import wave
+import struct
+
 
 
 
@@ -44,9 +49,9 @@ def printUsage():
     print("")
     print("Notes are expected in ./audio/notes/instrument/")
     print("  While instrument can be any string")
-    print("  Example of a note file: C#0_x.wav, while x goes from 1")
+    print("  Example of a note file: C#0_x.wav, while x goes from 0")
     print("Chords will be saved to ./audio/chords/instrument/")
-    print("  Example of a chord file: C7_x.wav, while x goes from 1")
+    print("  Example of a chord file: C7_x.wav, while x goes from 0")
 
 def handleArguments():
     args = sys.argv[1: ]
@@ -181,9 +186,18 @@ def getNoteSynonyms(note):
     output = list(dict.fromkeys(output))
     return output
 
+def chooseNotesFiles(useNotesFiles):
+    return [synonyms[0] for synonyms in useNotesFiles]
+
+
 ##########
 ## MAIN ##
 ##########
+
+# TODO
+
+# If mixOrders == False, randomly pick a note order and filter out
+# all notes that cannot be used in the final chord
 
 def main():
 
@@ -238,28 +252,72 @@ def main():
 
         # If it is a mp3 file, check if there is a wav with the same name. If
         # not, convert it to a wav file with the same name
-        for actNotesFiles in useNotesFiles:
-            for fileName in actNotesFiles:
+        useNotesFilesBackup = useNotesFiles
+        useNotesFiles = []
+        for actNotesFiles in useNotesFilesBackup:
+            actNotesFilesBackup = actNotesFiles
+            actNotesFiles = []
+            for fileName in actNotesFilesBackup:
                 if ".mp3" in fileName:
-                    if not fileName.replace(".mp3", ".wav") in actNotesFiles:
+                    if not fileName.replace(".mp3", ".wav") in actNotesFilesBackup:
                         # Convert the mp3 to wav
                         path = notesPath + "/" + instrument + "/" + fileName
                         print("Converting", fileName, "to wav")
                         subprocess.call(["ffmpeg", "-loglevel", "error",
                                 "-i", path, path.replace(".mp3", ".wav")])
+                    actNotesFiles.append(fileName.replace(".mp3", ".wav"))
+                else:
+                    actNotesFiles.append(fileName)
+            useNotesFiles.append(actNotesFiles)
 
-
-        # If mixOrders == False, randomly pick a note order and filter out
-        # all notes that cannot be used in the final chord
+        print(useNotesFiles)
+        useNotesFiles = chooseNotesFiles(useNotesFiles)
+        print(useNotesFiles)
 
         # Read the files and combine them into one
+        signals = []
+        sampleRates = []
+        minLen = float("inf")
+        path = notesPath + "/" + instrument + "/"
+        for fileName in useNotesFiles:
+            print(path + fileName)
+            sampleRate, signal = wavfile.read(path + fileName)
+            signals.append(signal)
+            sampleRates.append(sampleRate)
+            if float(len(signal)) < minLen:
+                minLen = len(signal)
 
-        # Write it to a file (they should be named chord_C_1.wav, chord_C_2.wav, 
-        # chord_C#m_1.wav, ...)
+        # TODO Check if all sampleRates match
 
+        # Sum the signals and trim it by the minimum length of the files
+        signal = np.array(sum(signals)[0: int(minLen)])
+        
+        # Also make it exactly in a range of a short int
+        multiplier = int((32767 / 2) / np.ndarray.max(np.absolute(signal)))
+        signal = np.multiply(signal, multiplier)
+        #  print(np.ndarray.max(np.absolute(signal)))
 
+        #  plt.plot(signal)
+        #  plt.show()
 
-    # TODO don't forget that the output length must be the min length of inputs
+        # Figure out a name for the file 
+        # (they should be named chord_C_0.wav, chord_C_1.wav, chord_C#m_0.wav, ...)
+
+        fileName = "chord_" + chord + "_"
+
+        existingFiles = ls(chordsPath)
+        existingFiles = [f for f in existingFiles if fileName in f]
+
+        if len(existingFiles) == 0:
+            fileName += "0"
+        else:
+            fileName += str(int(existingFiles[-1].split(".")[0][-1]) + 1)
+
+        # create chordsPath dir if it does not exist
+        subprocess.call(["mkdir", "-p", chordsPath])
+
+        # Write the signal to a file
+        wavfile.write(chordsPath + "/" + fileName + ".wav", sampleRate, signal)
 
 if __name__ == "__main__":
     main()
