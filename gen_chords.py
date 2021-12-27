@@ -4,32 +4,7 @@ import subprocess
 from scipy.io import wavfile
 import matplotlib.pyplot as plt
 import struct
-
-##############
-## SETTINGS ##
-##############
-
-notesPath = "./audio/notes"
-chordsPath = "./audio/chords"
-
-# If set to true, orders of notes will be also picked randomly
-# (the generated chord could consist of A0, B7, for example)
-#  mixOrders = False
-
-minOrder = 0
-maxOrder = 7
-
-# If set to true, instruments playing chords may differ (if chordsAmount > 1)
-# (the generated audio could consist of chords played by different instruments)
-mixInstruments = True
-
-# Amount of chords that the output should consist of
-chordsAmount = 4
-
-# Probability that a note in a chord will be there twice (second time with
-# higher order)
-noteDuplicateProbability = 0.5
-
+import settings
 
 ######################
 ## GLOBAL VARIABLES ##
@@ -37,11 +12,9 @@ noteDuplicateProbability = 0.5
 
 notes = ["A", "A#", "B", "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#"] * 2
 
-
 ###############
 ## FUNCTIONS ##
 ###############
-
 
 def printUsage():
     print("Usage: ")
@@ -192,8 +165,8 @@ def getNoteSynonyms(note):
     return output
 
 def chooseNotesFiles(useNotesFiles):
+    # TODO pick randomly
     return [synonyms[0] for synonyms in useNotesFiles]
-
 
 ##########
 ## MAIN ##
@@ -203,8 +176,8 @@ def main():
 
     amount, targets = handleArguments()
 
-    # Get all instruments (folders in notesPath)
-    instruments = ls(notesPath)
+    # Get all instruments (folders in settings.notesPath)
+    instruments = ls(settings.notesPath)
     instruments.remove("0_short")
 
     # For amount
@@ -219,24 +192,25 @@ def main():
 
         instrumentsUsed = []
         orders = []
-        for i in range(chordsAmount):
+        for i in range(settings.chordsAmount):
             # Randomly pick an instrument
             instrumentsUsed.append(instruments[np.random.randint(len(instruments))])
-            if not mixInstruments:
+            if not settings.:ixInstruments:
+
                 instrumentsUsed[i] = instrumentsUsed[0]
 
             # Randomly pick an order
-            orders.append(np.random.randint(minOrder, maxOrder + 1))
+            orders.append(np.random.randint(settings.minOrder, settings.maxOrder + 1))
 
         print("Instruments picked: ", instrumentsUsed)
 
         useNotesPaths = []
-        for i in range(chordsAmount):
+        for i in range(settings.chordsAmount):
 
-            # Get all notes for each instrument (.wav files in notesPath/instrument)
+            # Get all notes for each instrument (.wav files in settings.notesPath/instrument)
             notesFiles = []
             for instrument in instruments:
-                notesFiles.append(ls(notesPath + "/" + instrument))
+                notesFiles.append(ls(settings.notesPath + "/" + instrument))
 
             # Get a list of notes contained in the picked chord
             useNotes = getNotesInChord(plainChord, chordType, orders[i])
@@ -270,7 +244,7 @@ def main():
                     if ".mp3" in fileName:
                         if not fileName.replace(".mp3", ".wav") in actNotesFilesBackup:
                             # Convert the mp3 to wav
-                            path = notesPath + "/" + instrumentsUsed[i] + "/" + fileName
+                            path = settings.notesPath + "/" + instrumentsUsed[i] + "/" + fileName
                             #  print("Converting", fileName, "to wav")
                             subprocess.call(["ffmpeg", "-loglevel", "error", "-n",
                                     "-i", path, path.replace(".mp3", ".wav")])
@@ -281,7 +255,7 @@ def main():
 
             useNotesFiles = chooseNotesFiles(useNotesFiles)
             for fileName in useNotesFiles:
-                useNotesPaths.append(notesPath + "/" + instrumentsUsed[i] + "/" + fileName)
+                useNotesPaths.append(settings.notesPath + "/" + instrumentsUsed[i] + "/" + fileName)
 
         if len(useNotesPaths) == 0:
             print("No note files available. Continuing with the next chord.")
@@ -304,17 +278,23 @@ def main():
         if corruptFile:
             continue
 
+        # TODO Check if all sampleRates match
+
         minLen = len(signals[0])
         for signal in signals:
             if len(signal) < minLen:
                 minLen = len(signal)
 
-        # TODO Check if all sampleRates match
+        # Trim the signals by the minimum length of the files
+        signalsBackup = signals
+        signals = []
+        for signal in signalsBackup:
+            signals.append(signal[: int(minLen)])
+            # We can also use some offset since many files end with silence
+            #  signal = signal[: int(0.95 * minLen)]
 
-        # Sum the signals and trim it by the minimum length of the files - some
-        # offset, since files often end with silence
-        #  signal = np.array(sum(signals[0: int(0.95 * minLen)]))
-        signal = np.array(sum(signals)[0: int(minLen)])
+        # Sum the signals
+        signal = np.array(sum(signals))
 
         # Also make it exactly in a range of a short int
         multiplier = (32767 / 2) / np.ndarray.max(np.absolute(signal))
@@ -327,7 +307,7 @@ def main():
 
         # If there is no file with that name, the number following should be
         # zero. Otherwise, just add 1
-        existingFiles = ls(chordsPath)
+        existingFiles = ls(settings.chordsPath)
         existingFiles = [f for f in existingFiles if fileName in f]
         if len(existingFiles) == 0:
             fileName += "0"
@@ -336,12 +316,12 @@ def main():
             highestNum = max([int(num) for num in nums])
             fileName += str(highestNum + 1)
 
-        # Create chordsPath dir if it does not exist
-        subprocess.call(["mkdir", "-p", chordsPath])
+        # Create settings.chordsPath dir if it does not exist
+        subprocess.call(["mkdir", "-p", settings.chordsPath])
 
         # Write the signal to a file
-        wavfile.write(chordsPath + "/" + fileName + ".wav", sampleRate, signal)
-        print("Chord generated to", chordsPath + "/" + fileName + ".wav")
+        wavfile.write(settings.chordsPath + "/" + fileName + ".wav", sampleRate, signal)
+        print("Chord generated to", settings.chordsPath + "/" + fileName + ".wav")
 
 if __name__ == "__main__":
     main()
