@@ -69,6 +69,7 @@ def ls(path):
 
 def train(model):
     # Load the training data from trainingDataPath (defined in prepare_data.py)
+    print("Loading the data")
     if ls(settings.trainingDataDir)[0] != settings.trainingDataFileName:
         print("No data available. Please run 'prepare_data' first.")
         quit(0)
@@ -77,14 +78,16 @@ def train(model):
     data = np.load(settings.trainingDataDir + "/" + settings.trainingDataFileName, allow_pickle=True)
     nnInputs = data["inputs"]
     nnOutputs = data["outputs"]
+    print("Data loaded")
 
     # TODO Shuffle the data
 
-    #  print("Training with", len(nnInputs), "inputs and", len(nnOutputs), "outputs")
+    print("Starting training with", len(nnInputs), "data samples")
     # Train the model
     model.fit(nnInputs, nnOutputs, batch_size=10, epochs=trainingEpochs, shuffle=True)
     # Save the model
     saveModel(model)
+    print("Training finished, model saved")
 
 def predict(model, nnInputs, sampleRate):
 
@@ -143,10 +146,10 @@ def main():
     else:
         # Load the neural network (tf model)
         # TODO check if there is a model saved
+        print("Loading the model")
         model = tf.keras.models.load_model(modelPath)
 
         if sys.argv[1] == "train":
-            print("Training started")
             train(model)
 
         else:

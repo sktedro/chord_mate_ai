@@ -195,7 +195,7 @@ def main():
         for i in range(settings.chordsAmount):
             # Randomly pick an instrument
             instrumentsUsed.append(instruments[np.random.randint(len(instruments))])
-            if not settings.:ixInstruments:
+            if not settings.mixInstruments:
 
                 instrumentsUsed[i] = instrumentsUsed[0]
 

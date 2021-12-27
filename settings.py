@@ -28,7 +28,7 @@ maxOrder = 7
 mixInstruments = True
 
 # Amount of chords that the output should consist of
-chordsAmount = 1
+chordsAmount = 5
 
 # Probability that a note in a chord will be there twice (second time with
 # higher order)
