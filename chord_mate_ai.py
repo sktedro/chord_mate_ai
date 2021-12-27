@@ -176,7 +176,7 @@ def getNoteMagnitudes(ffts, freqs, resolution):
         # Append mags for this FFT result (of one frame)
         output.append(mags)
 
-    print(output[5])
+    #  print(output[5])
     return notes, noteFreqs, np.array(output)
 
 
@@ -195,7 +195,7 @@ def newModel():
     model = keras.Sequential()
 
     model.add(keras.Input(shape=(inputNodes, )))
-    model.add(keras.layers.Dense(outputNodes, activation="relu"))
+    model.add(keras.layers.Dense(outputNodes, activation="tanh"))
 
     model.compile(optimizer="adam", loss="mean_squared_error")
 
@@ -328,20 +328,12 @@ def main():
 
         # Get notes and their magnitudes (2 arrays: note freqs and magnitudes)
         notes, noteFreqs, noteMags = getNoteMagnitudes(magnitudes, freqs, resolution)
-        #  print(noteMags[50])
 
-        #  if len(nnInputs) == 0:
-            #  nnInputs = noteMags
-        #  else:
-            #  nnInputs = nnInputs + noteMags
         for i in range(len(noteMags)):
             nnInputs.append(noteMags[i])
 
         if train:
             chordIndex = chordsStrings.index(inputFile.split("_")[1])
-            print(inputFile.split("_")[1])
-            print(chordsStrings)
-            print(chordIndex)
             output = np.zeros(144)
             output[chordIndex] = 1.0
             for i in range(len(noteMags)):
@@ -350,12 +342,11 @@ def main():
     # Load the neural network (tf model)
     model = tf.keras.models.load_model(modelPath)
 
+    nnInputs = np.array(nnInputs)
+    nnOutputs = np.array(nnOutputs)
+
     # Train
     if train:
-        print(nnInputs[0])
-        print(nnOutputs[0])
-        nnInputs = np.array(nnInputs)
-        nnOutputs = np.array(nnOutputs)
         print("Training with", len(nnInputs), "inputs and", len(nnOutputs), "outputs")
         # Train the model
         model.fit(nnInputs, nnOutputs, batch_size=10, epochs=10, shuffle=True)
@@ -365,7 +356,7 @@ def main():
     # Predict
     else:
         # Pass the noteMags to the neural network to get the chord for each frame
-        predictions = model.predict(noteMags)
+        predictions = model.predict(nnInputs)
 
         # Print the predicted chords
         print("Predictions: ")

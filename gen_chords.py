@@ -5,8 +5,6 @@ from scipy.io import wavfile
 import matplotlib.pyplot as plt
 import struct
 
-print("KOK")
-
 ##############
 ## SETTINGS ##
 ##############
