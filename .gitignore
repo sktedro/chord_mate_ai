@@ -2,3 +2,4 @@
 audio/
 datasets/
 __pycache__/
+training_data/
