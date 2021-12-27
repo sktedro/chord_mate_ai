@@ -14,12 +14,21 @@ chordsPath = "./audio/chords"
 
 # If set to true, orders of notes will be also picked randomly
 # (the generated chord could consist of A0, B7, for example)
-mixOrders = False
+#  mixOrders = False
 
-# If set to true, instruments playing notes will be also picked randomly
-# (the generated chord could consist of A2 played by a guitar and B2 played by
-# a piano)
-mixInstruments = False
+minOrder = 0
+maxOrder = 7
+
+# If set to true, instruments playing chords may differ (if chordsAmount > 1)
+# (the generated audio could consist of chords played by different instruments)
+mixInstruments = True
+
+# Amount of chords that the output should consist of
+chordsAmount = 4
+
+# Probability that a note in a chord will be there twice (second time with
+# higher order)
+noteDuplicateProbability = 0.5
 
 
 ######################
@@ -190,11 +199,6 @@ def chooseNotesFiles(useNotesFiles):
 ## MAIN ##
 ##########
 
-# TODO
-
-# If mixOrders == False, randomly pick a note order and filter out
-# all notes that cannot be used in the final chord
-
 def main():
 
     amount, targets = handleArguments()
@@ -206,96 +210,120 @@ def main():
     # For amount
     for i in range(amount):
 
-        # Get all notes for each instrument (.wav files in notesPath/instrument)
-        notesFiles = []
-        for instrument in instruments:
-            notesFiles.append(ls(notesPath + "/" + instrument))
-
+        print("==================================================")
 
         # Randomly pick a chord (from len(targets) * len(notes) combinations)
         plainChord, chordType = pickChord(notes, targets)
         chord = plainChord + chordType
         print("Chord picked: ", chord)
 
-        # Randomly pick an instrument
-        instrument = instruments[np.random.randint(len(instruments))]
-        print("Instrument picked: ", instrument)
+        instrumentsUsed = []
+        orders = []
+        for i in range(chordsAmount):
+            # Randomly pick an instrument
+            instrumentsUsed.append(instruments[np.random.randint(len(instruments))])
+            if not mixInstruments:
+                instrumentsUsed[i] = instrumentsUsed[0]
 
-        # Randomly pick an order (up to 7 - excluding 8)
-        order = np.random.randint(0, 8)
-        order = np.random.randint(2, 5) # TODO remove
+            # Randomly pick an order
+            orders.append(np.random.randint(minOrder, maxOrder + 1))
 
-        # Get a list of notes contained in the picked chord
-        useNotes = getNotesInChord(plainChord, chordType, order)
+        print("Instruments picked: ", instrumentsUsed)
 
-        # Filter the notes files to ones of the instrument picked
-        useNotesFiles = notesFiles[instruments.index(instrument)]
+        useNotesPaths = []
+        for i in range(chordsAmount):
 
-        # !! Gb is the same as F# and so on! It needs to be accepted
-        useNotes = [getNoteSynonyms(note) for note in useNotes]
+            # Get all notes for each instrument (.wav files in notesPath/instrument)
+            notesFiles = []
+            for instrument in instruments:
+                notesFiles.append(ls(notesPath + "/" + instrument))
 
-        # Filter the note files to ones contained in the picked chord
-        useNotesFilesBackup = useNotesFiles
-        useNotesFiles = []
-        for noteSynonyms in useNotes:
-            actNoteFiles = []
-            for note in noteSynonyms:
-                for noteFile in useNotesFilesBackup:
-                    if note in noteFile:
-                        actNoteFiles.append(noteFile)
-            if len(actNoteFiles):
-                useNotesFiles.append(actNoteFiles)
-        #  print("Files to choose from: ", useNotesFiles)
+            # Get a list of notes contained in the picked chord
+            useNotes = getNotesInChord(plainChord, chordType, orders[i])
 
-        # If it is a mp3 file, check if there is a wav with the same name. If
-        # not, convert it to a wav file with the same name
-        useNotesFilesBackup = useNotesFiles
-        useNotesFiles = []
-        for actNotesFiles in useNotesFilesBackup:
-            actNotesFilesBackup = actNotesFiles
-            actNotesFiles = []
-            for fileName in actNotesFilesBackup:
-                if ".mp3" in fileName:
-                    if not fileName.replace(".mp3", ".wav") in actNotesFilesBackup:
-                        # Convert the mp3 to wav
-                        path = notesPath + "/" + instrument + "/" + fileName
-                        print("Converting", fileName, "to wav")
-                        subprocess.call(["ffmpeg", "-loglevel", "error",
-                                "-i", path, path.replace(".mp3", ".wav")])
-                    actNotesFiles.append(fileName.replace(".mp3", ".wav"))
-                else:
-                    actNotesFiles.append(fileName)
-            useNotesFiles.append(actNotesFiles)
+            # Filter the notes files to ones of the instrument picked
+            useNotesFiles = notesFiles[instruments.index(instrumentsUsed[i])]
 
-        useNotesFiles = chooseNotesFiles(useNotesFiles)
+            # !! Gb is the same as F# and so on! It needs to be accepted
+            useNotes = [getNoteSynonyms(note) for note in useNotes]
+
+            # Filter the note files to ones contained in the picked chord
+            useNotesFilesBackup = useNotesFiles
+            useNotesFiles = []
+            for noteSynonyms in useNotes:
+                actNoteFiles = []
+                for note in noteSynonyms:
+                    for noteFile in useNotesFilesBackup:
+                        if note in noteFile:
+                            actNoteFiles.append(noteFile)
+                if len(actNoteFiles):
+                    useNotesFiles.append(actNoteFiles)
+
+            # If it is a mp3 file, check if there is a wav with the same name. If
+            # not, convert it to a wav file with the same name
+            useNotesFilesBackup = useNotesFiles
+            useNotesFiles = []
+            for actNotesFiles in useNotesFilesBackup:
+                actNotesFilesBackup = actNotesFiles
+                actNotesFiles = []
+                for fileName in actNotesFilesBackup:
+                    if ".mp3" in fileName:
+                        if not fileName.replace(".mp3", ".wav") in actNotesFilesBackup:
+                            # Convert the mp3 to wav
+                            path = notesPath + "/" + instrumentsUsed[i] + "/" + fileName
+                            #  print("Converting", fileName, "to wav")
+                            subprocess.call(["ffmpeg", "-loglevel", "error", "-n",
+                                    "-i", path, path.replace(".mp3", ".wav")])
+                        actNotesFiles.append(fileName.replace(".mp3", ".wav"))
+                    else:
+                        actNotesFiles.append(fileName)
+                useNotesFiles.append(actNotesFiles)
+
+            useNotesFiles = chooseNotesFiles(useNotesFiles)
+            for fileName in useNotesFiles:
+                useNotesPaths.append(notesPath + "/" + instrumentsUsed[i] + "/" + fileName)
+
+        if len(useNotesPaths) == 0:
+            print("No note files available. Continuing with the next chord.")
+            continue
 
         # Read the files and combine them into one
         signals = []
         sampleRates = []
-        minLen = float("inf")
-        path = notesPath + "/" + instrument + "/"
-        for fileName in useNotesFiles:
-            sampleRate, signal = wavfile.read(path + fileName)
+        corruptFile = False
+        for path in useNotesPaths:
+            #  print("Reading file:", path)
+            sampleRate, signal = wavfile.read(path)
+            if np.ndarray.max(np.absolute(np.array(signal))) == 0:
+                print("One of the files is corrupt. Continuing with the next chord.")
+                corruptFile = True
+                break
             signals.append(signal)
             sampleRates.append(sampleRate)
-            if float(len(signal)) < minLen:
+
+        if corruptFile:
+            continue
+
+        minLen = len(signals[0])
+        for signal in signals:
+            if len(signal) < minLen:
                 minLen = len(signal)
 
         # TODO Check if all sampleRates match
 
-        # Sum the signals and trim it by the minimum length of the files
+        # Sum the signals and trim it by the minimum length of the files - some
+        # offset, since files often end with silence
+        #  signal = np.array(sum(signals[0: int(0.95 * minLen)]))
         signal = np.array(sum(signals)[0: int(minLen)])
-        
-        # Also make it exactly in a range of a short int
-        multiplier = int((32767 / 2) / np.ndarray.max(np.absolute(signal)))
-        signal = np.multiply(signal, multiplier)
 
-        #  plt.plot(signal)
-        #  plt.show()
+        # Also make it exactly in a range of a short int
+        multiplier = (32767 / 2) / np.ndarray.max(np.absolute(signal))
+        signal = np.multiply(signal, multiplier).astype(np.int16)
 
         # Figure out a name for the file 
         # (they should be named chord_C_0.wav, chord_C_1.wav, chord_C#m_0.wav, ...)
-        fileName = "chord_" + chord + "_" + instrument + "_"
+        # TODO name them based on settings, too?
+        fileName = "chord_" + chord + "_"
 
         # If there is no file with that name, the number following should be
         # zero. Otherwise, just add 1

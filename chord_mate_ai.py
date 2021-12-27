@@ -31,6 +31,8 @@ chordsPath = "./audio/chords"
 audioPath = "./audio"
 modelPath = "./nn/"
 
+trainingEpochs = 3
+
 ###############
 ## FUNCTIONS ##
 ###############
@@ -190,11 +192,15 @@ def getNoteMagnitudes(ffts, freqs, resolution):
 # TODO Also input some history or metadata?
 def newModel():
     inputNodes = 96
+    hiddenLayer1Nodes = 512
+    hiddenLayer2Nodes = 256
     outputNodes = 144
 
     model = keras.Sequential()
 
     model.add(keras.Input(shape=(inputNodes, )))
+    model.add(keras.layers.Dense(hiddenLayer1Nodes, activation="tanh"))
+    model.add(keras.layers.Dense(hiddenLayer2Nodes, activation="tanh"))
     model.add(keras.layers.Dense(outputNodes, activation="tanh"))
 
     model.compile(optimizer="adam", loss="mean_squared_error")
@@ -345,11 +351,21 @@ def main():
     nnInputs = np.array(nnInputs)
     nnOutputs = np.array(nnOutputs)
 
+    # This causes the NN to be less accurate, for some reason
+    # (it is more confident with wrong outputs)
+    # Normalize the NN inputs
+    #  for i in range(len(nnInputs)):
+        #  multiplier = 1 / max(nnInputs[i])
+        #  nnInputs[i] *= multiplier
+        #  TODO also append the multiplier to the nn input (maybe inverted or
+        #  something)
+
     # Train
     if train:
         print("Training with", len(nnInputs), "inputs and", len(nnOutputs), "outputs")
+        # TODO Shuffle the data
         # Train the model
-        model.fit(nnInputs, nnOutputs, batch_size=10, epochs=10, shuffle=True)
+        model.fit(nnInputs, nnOutputs, batch_size=10, epochs=trainingEpochs, shuffle=True)
         # Save the model
         saveModel(model)
 
@@ -369,6 +385,17 @@ def main():
                 print("From ", "{:.2f}".format(fromTime) + "s:",
                     "chord ", chordsStrings[chordIndex].ljust(7), 
                     " with confidence of ", str(int(confidence * 100)) + "%")
+                lastIndex = chordIndex
+
+        lastIndex = -1
+        print("After filtering by confidence:")
+        for i in range(len(predictions)):
+            confidence = max(predictions[i])
+            chordIndex = np.where(predictions[i] == confidence)[0][0]
+            if chordIndex != lastIndex and confidence > 0.8:
+                fromTime = sampleToTime(i * fftStep, sampleRate)
+                print("From ", "{:.2f}".format(fromTime) + "s:",
+                    "chord ", chordsStrings[chordIndex].ljust(7))
                 lastIndex = chordIndex
 
 
