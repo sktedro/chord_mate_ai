@@ -54,12 +54,12 @@ def transformSignal(frames, sampleRate):
     #  print("Calculating the DFT")
     # FFT
     magnitudes = abs(np.array([np.fft.fft(frames[k])[0: fftWidth // 2] for k in range(len(frames))]))
-    frequencies = [k * sampleRate // fftWidth for k in range(fftWidth // 2)]
+    freqs = [k * sampleRate // fftWidth for k in range(fftWidth // 2)]
     #  print("DFT calculated")
-    return magnitudes, frequencies
+    return magnitudes, freqs
 
-def plotDft(frequencies, magnitudes):
-    plt.plot(frequencies, magnitudes)
+def plotDft(freqs, magnitudes):
+    plt.plot(freqs, magnitudes)
     plt.title("Discrete fourier transform")
     plt.ylabel("Magnitude []")
     plt.xlabel("Frequency [Hz]")
@@ -101,59 +101,75 @@ def getNoteFreqs():
     #  print("Notes: ")
     #  print(notes)
 
-    #  print("Notes frequencies: ")
+    #  print("Notes freqs: ")
     #  for i in range(8):
         #  print(noteFreqs[i * 12: (i + 1) * 12])
 
     return notes, noteFreqs
 
-
-# Convert magnitudes received from FFT to notes and their magnitudes
-# (Returns three arrays: notes, exact notes frequencies, magnitude )
-def getToneMagnitudes(ffts, frequencies, resolution):
-    output = []
-    notes, noteFreqs = getNoteFreqs()
+# TODO static analysis of this function
+# For each frequency in freqs, get indices of note freqs that
+# are contained by the frequency
+# I know this is hard to understand (I had a slightly tough time while
+# coding this, too), sorry
+def getNotesContainedInFreqs(noteFreqs, freqs, resolution):
     spread = resolution / 2
     
-    # Edit ffts and frequencies to only go to 5kHz. We don't need to
+    notesContained = []
+    # https://dsp.stackexchange.com/questions/26927/what-is-a-frequency-bin
+    # https://stackoverflow.com/questions/10754549/fft-bin-width-clarification
+    # Both these sources say that the fft coeff represents the center
+    # of a frequency bin
+    lowerBound = np.array(freqs) - spread
+    upperBound = np.array(freqs) + spread
+    # If the frequency is within resolution/2 of a note, copy the magnitude
+    # Watch out if it is within resolution/2 of several notes - in that
+    # case, distribute it over all of them
+    for i in range(len(freqs)):
+
+        # Save indices of those notes, of which freqs are contained 
+        # in the fft sample
+        notesContainedTmp = np.zeros([0])
+        startIndex = np.where(noteFreqs >= lowerBound[i])[0]
+        endIndex = np.where(noteFreqs <= upperBound[i])[0]
+        if len(startIndex) and len(endIndex):
+            startIndex = startIndex[0]
+            endIndex = endIndex[-1]
+            if endIndex >= startIndex:
+                notesContainedTmp = np.arange(startIndex, endIndex + 1, 1)
+
+        notesContained.append(notesContainedTmp)
+
+    return notesContained
+
+
+# TODO static analysis of this function
+# Convert magnitudes received from FFT to notes and their magnitudes
+# (Returns three arrays: notes, exact notes freqs, magnitude )
+def getNoteMagnitudes(ffts, freqs, resolution):
+    output = []
+    notes, noteFreqs = getNoteFreqs()
+
+    # Edit ffts and freqs to only go to 5kHz. We don't need to
     # iterate over all of them
-    frequencies = [f for f in frequencies if f < 5000]
-    ffts = [fft[0: len(frequencies)] for fft in ffts]
+    freqs = [f for f in freqs if f < 5000]
+    ffts = [fft[0: len(freqs)] for fft in ffts]
+
+    notesContained = getNotesContainedInFreqs(noteFreqs, freqs, resolution)
 
     # For each frame passed to the FFT
     for fft in ffts:
         mags = np.zeros(len(noteFreqs))
 
         # For each frequency contained in the FFT output
-        for i in range(len(frequencies)):
-            # https://dsp.stackexchange.com/questions/26927/what-is-a-frequency-bin
-            # https://stackoverflow.com/questions/10754549/fft-bin-width-clarification
-            # Both these sources say that the fft coeff represents the center
-            # of a frequency bin
-            lowerBound = frequencies[i] - spread 
-            upperBound = frequencies[i] + spread 
+        for i in range(len(freqs)):
 
-            # If the frequency is within resolution/2 of a note, copy the magnitude
-            # Watch out if it is within resolution/2 of several notes - in that
-            # case, distribute it over all of them
-
-            # Save indices of those notes, of which frequencies are contained 
-            # in the fft sample
-            notesContained = []
-            startIndex = np.where(noteFreqs >= lowerBound)[0]
-            endIndex = np.where(noteFreqs <= upperBound)[0]
-            if len(startIndex) and len(endIndex):
-                startIndex = startIndex[0]
-                endIndex = endIndex[-1]
-                if endIndex >= startIndex:
-                    notesContained = np.arange(startIndex, endIndex + 1, 1)
-
-            # Add the magnitude to the note frequency (frequencies defined by
+            # Add the magnitude to the note frequency (freqs defined by
             # notesContained)
-            if len(notesContained) > 0:
-                mag = fft[i] / len(notesContained)
+            if len(notesContained[i]) > 0:
+                mag = fft[i] / len(notesContained[i])
                 # Add to the note magnitude(s)
-                for index in notesContained:
+                for index in notesContained[i]:
                     mags[index] += mag 
 
         # Append mags for this FFT result (of one frame)
@@ -233,6 +249,7 @@ def main():
 
     if sys.argv[1] == "train":
         train = True
+        print("Training started")
         inputFiles = ls(chordsPath)
     else:
         train = False
@@ -268,8 +285,9 @@ def main():
         audioLength = sampleCount / sampleRate
         resolution = sampleRate / fftWidth
 
-        print("Sample rate: ", sampleRate, ", resolution of the FFT: ", "{:.2f}".format(resolution))
-        print("Amount of samples: ", sampleCount, ", audio length [s]: ", "{:.2f}".format(audioLength))
+        if not train:
+            print("Sample rate: ", sampleRate, ", resolution of the FFT: ", "{:.2f}".format(resolution))
+            print("Amount of samples: ", sampleCount, ", audio length [s]: ", "{:.2f}".format(audioLength))
 
         # If the audio is stereo, convert it to mono
         if len(samples.shape) == 2:
@@ -294,17 +312,17 @@ def main():
         #  plotSignal(frames[24], audioLength)
 
         # Discrete fourier transform
-        magnitudes, frequencies = transformSignal(frames, sampleRate)
+        magnitudes, freqs = transformSignal(frames, sampleRate)
 
         # Normalize the FFT output (energy needs to be preserved)
         # 64 here is just a magic number so the numbers are below 0
         magnitudes /= fftWidth / 64
 
         # Plot the result
-        #  plotDft(frequencies, magnitudes[50])
+        #  plotDft(freqs, magnitudes[50])
 
-        # Get notes and their magnitudes (2 arrays: note frequencies and magnitudes)
-        notes, noteFreqs, noteMags = getToneMagnitudes(magnitudes, frequencies, resolution)
+        # Get notes and their magnitudes (2 arrays: note freqs and magnitudes)
+        notes, noteFreqs, noteMags = getNoteMagnitudes(magnitudes, freqs, resolution)
         #  print(noteMags[50])
 
         #  if len(nnInputs) == 0:
@@ -330,7 +348,7 @@ def main():
         nnOutputs = np.array(nnOutputs)
         print("Training with", len(nnInputs), "inputs and", len(nnOutputs), "outputs")
         # Train the model
-        model.fit(nnInputs, nnOutputs, batch_size=100, epochs=5, shuffle=True)
+        model.fit(nnInputs, nnOutputs, batch_size=100, epochs=10, shuffle=True)
         # Save the model
         saveModel(model)
 
@@ -338,7 +356,6 @@ def main():
     else:
         # Pass the noteMags to the neural network to get the chord for each frame
         predictions = model.predict(noteMags)
-        #  print(predictions)
 
         # Print the predicted chords
         print("Predictions: ")
