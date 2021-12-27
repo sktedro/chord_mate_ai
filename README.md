@@ -61,7 +61,7 @@ Make sure you have:
    different files playing the same chord (amount of instruments, notes, ... 
    can vary)
 
-`python3 prepare_data.py`
+`make prep`
 
 ## Training
 

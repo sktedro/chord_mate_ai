@@ -27,10 +27,21 @@ maxOrder = 7
 # (the generated audio could consist of chords played by different instruments)
 mixInstruments = True
 
-# Amount of chords that the output should consist of
-chordsAmount = 5
+# Amount of instruments that the output should consist of
+instrumentsAmount = 3
 
 # Probability that a note in a chord will be there twice (second time with
 # higher order)
 noteDuplicateProbability = 0.5
 
+modelPath = "./nn/"
+
+nnNodes = [96, 512, 256, 144]
+
+trainingEpochs = 3
+
+# Lower this number if the RAM limit is getting exceeded
+inputsPerTraining = 100000
+
+# Number of training inputs after which the model should be recalculated
+batchSize = 1000

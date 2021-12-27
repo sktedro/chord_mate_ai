@@ -29,5 +29,8 @@ test:
 	python3 ${SCRIPT} "./audio/chords_test/chord_G_0.wav"
 	python3 ${SCRIPT} "./audio/chords_test/chord_G#_0.wav"
 
+prep: 
+	python3 prepare_data.py
+
 clean:
 	rm __pycache__

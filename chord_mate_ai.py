@@ -15,16 +15,7 @@ import subprocess
 import prepare_data
 import process_audio
 import settings
-
-##############
-## SETTINGS ##
-##############
-
-modelPath = "./nn/"
-
-nnNodes = [96, 512, 256, 144]
-
-trainingEpochs = 3
+from math import ceil
 
 ###############
 ## FUNCTIONS ##
@@ -49,10 +40,10 @@ def newModel():
 
     model = tf.keras.Sequential()
 
-    model.add(tf.keras.Input(shape=(nnNodes[0], )))
-    for nodes in nnNodes[1: -1]:
+    model.add(tf.keras.Input(shape=(settings.nnNodes[0], )))
+    for nodes in settings.nnNodes[1: -1]:
         model.add(tf.keras.layers.Dense(nodes, activation="tanh"))
-    model.add(tf.keras.layers.Dense(nnNodes[-1], activation="tanh"))
+    model.add(tf.keras.layers.Dense(settings.nnNodes[-1], activation="tanh"))
 
     model.compile(optimizer="adam", loss="mean_squared_error")
 
@@ -62,7 +53,7 @@ def newModel():
     return model
 
 def saveModel(model):
-    model.save(modelPath)
+    model.save(settings.modelPath)
 
 def ls(path):
     return subprocess.run(["ls", path], stdout=subprocess.PIPE).stdout.decode('utf-8').split("\n")[0: -1]
@@ -78,13 +69,34 @@ def train(model):
     data = np.load(settings.trainingDataDir + "/" + settings.trainingDataFileName, allow_pickle=True)
     nnInputs = data["inputs"]
     nnOutputs = data["outputs"]
-    print("Data loaded")
 
-    # TODO Shuffle the data
+    # Shuffle the data
+    print("Shuffling the data")
+    # Create random indices
+    destIndices = np.arange(len(nnInputs))
+    np.random.shuffle(destIndices)
+    nnInputsBackup = nnInputs
+    nnOutputsBackup = nnOutputs
+    # Move the inputs and outputs to a new array based on these indices
+    for i in range(len(destIndices)):
+        nnInputs[i] = nnInputsBackup[destIndices[i]]
+        nnOutputs[i] = nnOutputsBackup[destIndices[i]]
 
+    # Train the neural network (divide the inputs and outputs to
+    # inputsPerTraining long arrays) 
     print("Starting training with", len(nnInputs), "data samples")
-    # Train the model
-    model.fit(nnInputs, nnOutputs, batch_size=10, epochs=trainingEpochs, shuffle=True)
+    for i in range(ceil(len(nnInputs) / settings.inputsPerTraining)):
+        fromIndex = i * settings.inputsPerTraining
+        toIndex = (i + 1) * settings.inputsPerTraining
+        if toIndex > len(nnInputs):
+            toIndex = len(nnInputs)
+        print("From", fromIndex, "to", toIndex)
+
+        # Train the model
+        model.fit(nnInputs[fromIndex: toIndex], nnOutputs[fromIndex: toIndex], 
+                batch_size=settings.batchSize, epochs=settings.trainingEpochs, 
+                shuffle=True)
+
     # Save the model
     saveModel(model)
     print("Training finished, model saved")
@@ -147,7 +159,7 @@ def main():
         # Load the neural network (tf model)
         # TODO check if there is a model saved
         print("Loading the model")
-        model = tf.keras.models.load_model(modelPath)
+        model = tf.keras.models.load_model(settings.modelPath)
 
         if sys.argv[1] == "train":
             train(model)

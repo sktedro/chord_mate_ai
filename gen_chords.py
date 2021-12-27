@@ -192,7 +192,7 @@ def main():
 
         instrumentsUsed = []
         orders = []
-        for i in range(settings.chordsAmount):
+        for i in range(settings.instrumentsAmount):
             # Randomly pick an instrument
             instrumentsUsed.append(instruments[np.random.randint(len(instruments))])
             if not settings.mixInstruments:
@@ -205,7 +205,7 @@ def main():
         print("Instruments picked: ", instrumentsUsed)
 
         useNotesPaths = []
-        for i in range(settings.chordsAmount):
+        for i in range(settings.instrumentsAmount):
 
             # Get all notes for each instrument (.wav files in settings.notesPath/instrument)
             notesFiles = []
