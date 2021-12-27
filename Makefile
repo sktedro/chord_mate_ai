@@ -4,10 +4,10 @@ all:
 	@echo This target does nothing, for now
 
 sample: 
-	python3 ${SCRIPT} sample.wav
+	python3 ${SCRIPT} ./audio/sample.wav
 
 sample2: 
-	python3 ${SCRIPT} sample2.wav
+	python3 ${SCRIPT} ./audio/sample2.wav
 
 train:
 	python3 ${SCRIPT} train

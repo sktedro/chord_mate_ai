@@ -15,6 +15,7 @@ import matplotlib.pyplot as plt
 import matplotlib
 import wave
 import subprocess
+#  import gen_chords
 
 ##############
 ## SETTINGS ##
@@ -175,6 +176,7 @@ def getNoteMagnitudes(ffts, freqs, resolution):
         # Append mags for this FFT result (of one frame)
         output.append(mags)
 
+    print(output[5])
     return notes, noteFreqs, np.array(output)
 
 
@@ -231,6 +233,9 @@ def ls(path):
 ## MAIN ##
 ##########
 
+# TODO call the generator from here - don't let it generate sample files but
+# return the wave here
+
 def main():
     print("==================================================")
 
@@ -279,11 +284,11 @@ def main():
         if train:
             path = chordsPath + "/" + inputFile
         else:
-            path = audioPath + "/" + inputFile
+            path = inputFile
         sampleRate, samples = wavfile.read(path)
         sampleCount = len(samples)
         audioLength = sampleCount / sampleRate
-        resolution = sampleRate / fftWidth
+        resolution = sampleRate / fftWidth + 1 # + 1 for some tolerance
 
         if not train:
             print("Sample rate: ", sampleRate, ", resolution of the FFT: ", "{:.2f}".format(resolution))
@@ -319,7 +324,7 @@ def main():
         magnitudes /= fftWidth / 64
 
         # Plot the result
-        #  plotDft(freqs, magnitudes[50])
+        #  plotDft(freqs, magnitudes[5])
 
         # Get notes and their magnitudes (2 arrays: note freqs and magnitudes)
         notes, noteFreqs, noteMags = getNoteMagnitudes(magnitudes, freqs, resolution)
@@ -334,8 +339,11 @@ def main():
 
         if train:
             chordIndex = chordsStrings.index(inputFile.split("_")[1])
+            print(inputFile.split("_")[1])
+            print(chordsStrings)
+            print(chordIndex)
             output = np.zeros(144)
-            output[chordIndex] = 1
+            output[chordIndex] = 1.0
             for i in range(len(noteMags)):
                 nnOutputs.append(output)
 
@@ -344,11 +352,13 @@ def main():
 
     # Train
     if train:
+        print(nnInputs[0])
+        print(nnOutputs[0])
         nnInputs = np.array(nnInputs)
         nnOutputs = np.array(nnOutputs)
         print("Training with", len(nnInputs), "inputs and", len(nnOutputs), "outputs")
         # Train the model
-        model.fit(nnInputs, nnOutputs, batch_size=100, epochs=10, shuffle=True)
+        model.fit(nnInputs, nnOutputs, batch_size=10, epochs=10, shuffle=True)
         # Save the model
         saveModel(model)
 
