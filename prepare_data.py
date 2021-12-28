@@ -64,8 +64,8 @@ def main():
         newOutputs = np.concatenate((oldOutputs, nnOutputs))
         # Backup the old training data
         subprocess.call(["mv", 
-        settings.dataDir + "/" + dataFileName, 
-        settings.dataDir + "/" + dataFileName + "_backup"])
+            settings.dataDir + "/" + dataFileName, 
+            settings.dataDir + "/" + dataFileName + "_backup"])
 
     # Otherwise, just write the nnInputs and nnOutputs
     else:

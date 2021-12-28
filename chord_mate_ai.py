@@ -58,29 +58,35 @@ def saveModel(model):
 def ls(path):
     return subprocess.run(["ls", path], stdout=subprocess.PIPE).stdout.decode('utf-8').split("\n")[0: -1]
 
-def train(model):
-    # Load the training data from trainingDataPath (defined in prepare_data.py)
+def loadData(fileName):
     print("Loading the data")
-    if not settings.trainingDataFileName in ls(settings.dataDir):
+    if not fileName in ls(settings.dataDir):
         print("No data available. Please run 'prepare_data' first.")
         quit(0)
+    data = np.load(settings.dataDir + "/" + fileName, allow_pickle=True)
+    return data["inputs"], data["outputs"]
 
-    # Load the data and shuffle it
-    data = np.load(settings.dataDir + "/" + settings.trainingDataFileName, allow_pickle=True)
-    nnInputs = data["inputs"]
-    nnOutputs = data["outputs"]
-
-    # Shuffle the data
+def shuffleData(inputs, outputs):
     print("Shuffling the data")
+
     # Create random indices
-    destIndices = np.arange(len(nnInputs))
+    destIndices = np.arange(len(inputs))
     np.random.shuffle(destIndices)
-    nnInputsBackup = nnInputs
-    nnOutputsBackup = nnOutputs
+    inputsBackup = inputs
+    outputsBackup = outputs
+
     # Move the inputs and outputs to a new array based on these indices
     for i in range(len(destIndices)):
-        nnInputs[i] = nnInputsBackup[destIndices[i]]
-        nnOutputs[i] = nnOutputsBackup[destIndices[i]]
+        inputs[i] = inputsBackup[destIndices[i]]
+        outputs[i] = outputsBackup[destIndices[i]]
+    return inputs, outputs
+
+def train(model):
+    # Load the training data from trainingDataPath (defined in settings.py)
+    nnInputs, nnOutputs = loadData(settings.trainingDataFileName)
+
+    # Shuffle the data
+    nnInputs, nnOutputs = shuffleData(nnInputs, nnOutputs)
 
     # Train the neural network (divide the inputs and outputs to
     # inputsPerTraining long arrays) 
@@ -100,6 +106,34 @@ def train(model):
     # Save the model
     saveModel(model)
     print("Training finished, model saved")
+
+def test(model):
+    # Load the training data from trainingDataPath (defined in settings.py)
+    nnInputs, nnOutputs = loadData(settings.testingDataFileName)
+
+    # Just an array of all 144 chords
+    chordsStrings = process_audio.getChordsStringsArray()
+
+    print("Starting testing with", len(nnInputs), "data samples")
+    predictions = model.predict(nnInputs)
+    right = 0
+    wrong = 0
+    for i in range(len(predictions)):
+        expectedChordIndex = np.where(nnOutputs[i] == 1)[0][0]
+        predictedChordIndex = np.where(predictions[i] == max(predictions[i]))[0][0]
+        expected = chordsStrings[expectedChordIndex]
+        predicted = chordsStrings[predictedChordIndex]
+        if expected == predicted:
+            right += 1
+        else:
+            wrong += 1
+        accuracy = 100 * right / (right + wrong)
+        #  print("Expected", expected.ljust(7), ", predicted", predicted.ljust(7),
+                #  " | Accuracy: ", "{:.4f}".format(accuracy) + "%")
+        print("Accuracy: ", "{:.4f}".format(accuracy) + "%", end = "\r")
+    print("Accuracy: ", "{:.4f}".format(accuracy) + "%")
+
+    print("Testing finished")
 
 def predict(model, nnInputs, sampleRate):
 
@@ -163,6 +197,8 @@ def main():
 
         if sys.argv[1] == "train":
             train(model)
+        elif sys.argv[1] == "test":
+            test(model)
 
         else:
             nnInputs, nnOutputs, sampleRate = process_audio.processAudio(

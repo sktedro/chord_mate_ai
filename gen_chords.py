@@ -178,11 +178,15 @@ def chooseNotesFiles(useNotesFiles):
 
 def main():
 
+    print("==================================================")
+    print("==================================================")
+
     amount, instrumentsAmount, targets = handleArguments()
 
     # Get all instruments (folders in settings.notesPath)
     instruments = ls(settings.notesPath)
-    instruments.remove("0_short")
+    if "0_short" in instruments:
+        instruments.remove("0_short")
 
     # For amount
     for i in range(amount):

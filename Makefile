@@ -29,18 +29,7 @@ train:
 
 # TODO
 test:
-	python3 ${SCRIPT} "./audio/chords_test/chord_A_0.wav"
-	python3 ${SCRIPT} "./audio/chords_test/chord_A#_0.wav"
-	python3 ${SCRIPT} "./audio/chords_test/chord_B_0.wav"
-	python3 ${SCRIPT} "./audio/chords_test/chord_C_0.wav"
-	python3 ${SCRIPT} "./audio/chords_test/chord_C#_0.wav"
-	python3 ${SCRIPT} "./audio/chords_test/chord_D_0.wav"
-	python3 ${SCRIPT} "./audio/chords_test/chord_D#_0.wav"
-	python3 ${SCRIPT} "./audio/chords_test/chord_E_0.wav"
-	python3 ${SCRIPT} "./audio/chords_test/chord_F_0.wav"
-	python3 ${SCRIPT} "./audio/chords_test/chord_F#_0.wav"
-	python3 ${SCRIPT} "./audio/chords_test/chord_G_0.wav"
-	python3 ${SCRIPT} "./audio/chords_test/chord_G#_0.wav"
+	python3 ${SCRIPT} test
 
 clean:
 	rm __pycache__
