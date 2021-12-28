@@ -5,6 +5,7 @@ from scipy.io import wavfile
 import matplotlib.pyplot as plt
 import struct
 import settings
+import misc
 
 ######################
 ## GLOBAL VARIABLES ##
@@ -71,9 +72,6 @@ def pickChord(chords, targets):
         target = "m"
     return chord, target
 
-
-def ls(path):
-    return subprocess.run(["ls", path], stdout=subprocess.PIPE).stdout.decode('utf-8').split("\n")[0: -1]
 
 def getPitchClassesOfNotesInChord(chordType):
     # Major (C)
@@ -184,7 +182,7 @@ def main():
     amount, instrumentsAmount, targets = handleArguments()
 
     # Get all instruments (folders in settings.notesPath)
-    instruments = ls(settings.notesPath)
+    instruments = misc.ls(settings.notesPath)
     if "0_short" in instruments:
         instruments.remove("0_short")
 
@@ -220,7 +218,7 @@ def main():
             # Get all notes for each instrument (.wav files in settings.notesPath/instrument)
             notesFiles = []
             for instrument in instruments:
-                notesFiles.append(ls(settings.notesPath + "/" + instrument))
+                notesFiles.append(misc.ls(settings.notesPath + "/" + instrument))
 
             # Get a list of notes contained in the picked chord
             useNotes = getNotesInChord(plainChord, chordType, orders[i])
@@ -323,7 +321,7 @@ def main():
 
         # If there is no file with that name, the number following should be
         # zero. Otherwise, just add 1
-        existingFiles = ls(settings.chordsPath)
+        existingFiles = misc.ls(settings.chordsPath)
         existingFiles = [f for f in existingFiles if fileName in f]
         if len(existingFiles) == 0:
             fileName += "0"

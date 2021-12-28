@@ -13,8 +13,8 @@ notesPath = "./audio/notes"
 audioPath = "./audio"
 
 dataDir = "./data"
-trainingDataFileName = "training_data.npz"
-testingDataFileName = "testing_data.npz"
+trainingDataFileName = "training_data"
+testingDataFileName = "testing_data"
 # If the data file already exists, it will be loaded and new data will be 
 # appended. Otherwise, it will be created
 
@@ -74,4 +74,4 @@ trainingEpochs = 3
 inputsPerTraining = 100000
 
 # Number of training inputs after which the model should be recalculated
-batchSize = 32
+batchSize = 1024

@@ -16,6 +16,7 @@ import prepare_data
 import process_audio
 import settings
 from math import ceil
+import misc
 
 ###############
 ## FUNCTIONS ##
@@ -68,38 +69,12 @@ def newModel():
 def saveModel(model):
     model.save(settings.modelPath)
 
-def ls(path):
-    return subprocess.run(["ls", path], stdout=subprocess.PIPE).stdout.decode('utf-8').split("\n")[0: -1]
-
-def loadData(fileName):
-    print("Loading the data")
-    if not fileName in ls(settings.dataDir):
-        print("No data available. Please run 'prepare_data' first.")
-        quit(0)
-    data = np.load(settings.dataDir + "/" + fileName, allow_pickle=True)
-    return data["inputs"], data["outputs"]
-
-def shuffleData(inputs, outputs):
-    print("Shuffling the data")
-
-    # Create random indices
-    destIndices = np.arange(len(inputs))
-    np.random.shuffle(destIndices)
-    inputsBackup = inputs
-    outputsBackup = outputs
-
-    # Move the inputs and outputs to a new array based on these indices
-    for i in range(len(destIndices)):
-        inputs[i] = inputsBackup[destIndices[i]]
-        outputs[i] = outputsBackup[destIndices[i]]
-    return inputs, outputs
-
 def train(model):
     # Load the training data from trainingDataPath (defined in settings.py)
-    nnInputs, nnOutputs = loadData(settings.trainingDataFileName)
+    nnInputs, nnOutputs = misc.loadData(settings.trainingDataFileName)
 
     # Shuffle the data
-    nnInputs, nnOutputs = shuffleData(nnInputs, nnOutputs)
+    nnInputs, nnOutputs = misc.shuffleData(nnInputs, nnOutputs)
 
     # Train the neural network (divide the inputs and outputs to
     # inputsPerTraining long arrays) 
@@ -122,7 +97,7 @@ def train(model):
 
 def test(model):
     # Load the training data from trainingDataPath (defined in settings.py)
-    nnInputs, nnOutputs = loadData(settings.testingDataFileName)
+    nnInputs, nnOutputs = misc.loadData(settings.testingDataFileName)
 
     # Just an array of all 144 chords
     chordsStrings = process_audio.getChordsStringsArray()
