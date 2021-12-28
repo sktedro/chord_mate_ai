@@ -109,3 +109,10 @@ Make sure you have:
 # Datasets used (maybe not all of them, but I'd like to mention them all):
  - https://magenta.tensorflow.org/datasets/nsynth
  - https://github.com/gleitz/midi-js-soundfonts
+
+
+# Neural network milestones
+ - Accuracy 99% with training-like data (single chords) - chord
+ - Accuracy 99% with training-like data, but several chords in one file -
+   progression
+ - Accuracy 95% with actual music (with singing, pauses, ...) - song

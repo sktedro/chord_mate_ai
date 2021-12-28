@@ -35,7 +35,7 @@ modelPath = "./nn/"
 
 nnNodes = [96, 512, 256, 144]
 
-trainingEpochs = 3
+trainingEpochs = 5
 
 # Lower this number if the RAM limit is getting exceeded
 inputsPerTraining = 100000

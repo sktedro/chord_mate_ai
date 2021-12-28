@@ -57,8 +57,12 @@ def main():
         newInputs = nnInputs
         newOutputs = nnOutputs
 
-    # Output the data (compressed)
     print("Saving the data")
+    # Backup the old training data
+    subprocess.call(["mv", 
+        settings.trainingDataDir + "/" + settings.trainingDataFileName, 
+        settings.trainingDataDir + "/" + settings.trainingDataFileName + "_backup"])
+    # Output the data (compressed)
     np.savez_compressed(
             settings.trainingDataDir + "/" + settings.trainingDataFileName, 
             inputs = newInputs, outputs = newOutputs)
