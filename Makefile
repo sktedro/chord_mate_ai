@@ -32,4 +32,4 @@ test:
 	python3 ${SCRIPT} test
 
 clean:
-	rm __pycache__
+	rm -rf __pycache__ data/*_backup.npz

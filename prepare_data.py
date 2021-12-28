@@ -65,7 +65,7 @@ def main():
         # Backup the old training data
         subprocess.call(["mv", 
             settings.dataDir + "/" + dataFileName, 
-            settings.dataDir + "/" + dataFileName + "_backup"])
+            settings.dataDir + "/" + dataFileName.split(".")[0] + "_backup" + "." + dataFileName.split(".")[1]])
 
     # Otherwise, just write the nnInputs and nnOutputs
     else:
