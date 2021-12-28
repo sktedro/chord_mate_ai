@@ -28,7 +28,7 @@ empty one. This will overwrite the neural network saved in `nn/`
 
 To generate the training data, you first need chords to generate it from.
 Chords are `.wav` or `.mp3` files containing a sound of a chord, while the files
-name represents the chord. Amount of instruments, duplicatet notes in a chord,
+name represents the chord. Amount of instruments, duplicate notes in a chord,
 ... can vary
 
 I strongly recommend the midi-js-soundfonts note dataset. For my purposes, I
@@ -45,7 +45,11 @@ Make sure you have:
    different files playing the same note (useful if you have notes captured by 
    mic and pickup (for example))
 
-`python3 gen_chords.py amount`
+`python3 gen_chords.py amount instrumentsAmount`
+
+instrumentsAmount stands for the amount of instruments to use when generating 
+the chord (each instrument plays the chord separately, but audio is merged)
+
 
 ## Generating training data
 

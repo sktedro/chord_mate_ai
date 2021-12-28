@@ -27,9 +27,6 @@ maxOrder = 7
 # (the generated audio could consist of chords played by different instruments)
 mixInstruments = True
 
-# Amount of instruments that the output should consist of
-instrumentsAmount = 3
-
 # Probability that a note in a chord will be there twice (second time with
 # higher order)
 noteDuplicateProbability = 0.5
@@ -44,4 +41,4 @@ trainingEpochs = 3
 inputsPerTraining = 100000
 
 # Number of training inputs after which the model should be recalculated
-batchSize = 1000
+batchSize = 512

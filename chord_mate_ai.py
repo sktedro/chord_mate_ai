@@ -90,7 +90,7 @@ def train(model):
         toIndex = (i + 1) * settings.inputsPerTraining
         if toIndex > len(nnInputs):
             toIndex = len(nnInputs)
-        print("From", fromIndex, "to", toIndex)
+        print("Training with data from index", fromIndex, "to", toIndex)
 
         # Train the model
         model.fit(nnInputs[fromIndex: toIndex], nnOutputs[fromIndex: toIndex], 

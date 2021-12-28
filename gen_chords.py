@@ -18,10 +18,13 @@ notes = ["A", "A#", "B", "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#"] * 2
 
 def printUsage():
     print("Usage: ")
-    print("python3 gen_training_data.sh amount [targets]")
+    print("python3 gen_training_data.sh amount instrumentsAmount [targets]")
     print("")
     print("Amount stands for:")
     print("  The amount of .wav samples (chords) to generate")
+    print("InstrumentsAmount stands for:")
+    print("  The amount of instruments to use when generating the chord")
+    print("  (Each instrument plays the chord separately, but audio is merged)")
     print("Targets can be (separated by spaces):")
     print("  major, minor, 7, 5, dim, dim7, aug, sus2, sus4, maj7, m7, 7sus4")
     print("")
@@ -34,8 +37,8 @@ def printUsage():
 def handleArguments():
     args = sys.argv[1: ]
 
-    if len(args) == 0:
-        print("Please specify the amount")
+    if len(args) < 2:
+        print("Please specify the amount of chords and amount of instruments")
         printUsage()
         quit(1)
 
@@ -44,10 +47,11 @@ def handleArguments():
         quit(0)
 
     amount = int(args[0])
+    instrumentsAmount = int(args[1])
 
     possibleTargets = ["major", "minor", "7", "5", "dim", "dim7", "aug", "sus2", "sus4", "maj7", "m7", "7sus4"]
-    if len(args) > 1:
-        targets = args[1: ]
+    if len(args) > 2:
+        targets = args[2: ]
         for target in targets:
             if not target in possibleTargets:
                 print("Wrong target:", target)
@@ -56,7 +60,7 @@ def handleArguments():
     else:
         targets = possibleTargets
 
-    return amount, targets
+    return amount, instrumentsAmount, targets
 
 def pickChord(chords, targets):
     chord = chords[np.random.randint(len(chords))]
@@ -174,7 +178,7 @@ def chooseNotesFiles(useNotesFiles):
 
 def main():
 
-    amount, targets = handleArguments()
+    amount, instrumentsAmount, targets = handleArguments()
 
     # Get all instruments (folders in settings.notesPath)
     instruments = ls(settings.notesPath)
@@ -192,7 +196,7 @@ def main():
 
         instrumentsUsed = []
         orders = []
-        for i in range(settings.instrumentsAmount):
+        for i in range(instrumentsAmount):
             # Randomly pick an instrument
             instrumentsUsed.append(instruments[np.random.randint(len(instruments))])
             if not settings.mixInstruments:
@@ -205,7 +209,7 @@ def main():
         print("Instruments picked: ", instrumentsUsed)
 
         useNotesPaths = []
-        for i in range(settings.instrumentsAmount):
+        for i in range(instrumentsAmount):
 
             # Get all notes for each instrument (.wav files in settings.notesPath/instrument)
             notesFiles = []
