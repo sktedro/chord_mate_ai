@@ -51,26 +51,20 @@ noteDuplicateProbability = 0.5
 ## TRAINING ##
 ##############
 
-# Network layers and amounts of nodes they consist of
-
-# Best accuracy after the first training cycle: 62%
-#  nnNodes = [96, 144]
-
-# Best accuracy after the first training cycle: 75%
-nnNodes = [96, 512, 144]
-
-# Best accuracy after one training cycle: 74%
-#  nnNodes = [96, 512, 256, 144]
-
-#  nnNodes = [96, 192, 256, 288, 144]
-
-#  nnNodes = [96, 192, 256, 256, 288, 144]
-
-# Performing very well after just an hour of training
-# Best accuracy after one training cycle: 72%
+#  hiddenLayersActivationFn = "tanh"
+#  outputLayerActivationFn = "tanh"
+#  optimizer = "adam"
+#  lossFunction = "mean_squared_error"
 #  nnNodes = [96, 192, 384, 1024, 576, 288, 144]
 
-#  nnNodes = [96, 384, 512, 1024, 1024, 576, 288, 144]
+# Better settings for categorization
+hiddenLayersActivationFn = "tanh"
+outputLayerActivationFn = "softmax"
+optimizer = "adam"
+lossFunction = "categorical_crossentropy"
+#  nnNodes = [96, 144]
+nnNodes = [96, 512, 144]
+
 
 # Epochs to train for in one training cycle
 trainingEpochs = 3

@@ -33,21 +33,34 @@ def sampleToTime(sampleNum, sampleRate):
     # Outputs amount: 12 * 12 = 144
 # TODO Also input some history or metadata?
 def newModel():
-    inputNodes = 96
-    hiddenLayer1Nodes = 512
-    hiddenLayer2Nodes = 256
-    outputNodes = 144
-
+    # Create a sequential model
     model = tf.keras.Sequential()
 
-    model.add(tf.keras.Input(shape=(settings.nnNodes[0], )))
+    # Input layer
+    model.add(
+            tf.keras.Input(
+                shape=(settings.nnNodes[0], )))
+
+    # Hidden layers
     for nodes in settings.nnNodes[1: -1]:
-        model.add(tf.keras.layers.Dense(nodes, activation="tanh"))
-    model.add(tf.keras.layers.Dense(settings.nnNodes[-1], activation="softmax"))
+        model.add(
+                tf.keras.layers.Dense(
+                    nodes,
+                    activation=settings.hiddenLayersActivationFn))
+    # Output layer
+    model.add(
+            tf.keras.layers.Dense(
+                settings.nnNodes[-1],
+                activation=settings.outputLayerActivationFn))
 
-    model.compile(optimizer="adam", loss="categorical_crossentropy", metrics=["accuracy"])
+    # Compiling the model
+    model.compile(
+            optimizer=settings.optimizer,
+            loss=settings.lossFunction,
+            metrics=["accuracy"])
 
-    randomInput = np.array([np.random.random(inputNodes)])
+    # To complete the model, a prediction must be made for whatever reason
+    randomInput = np.array([np.random.random(settings.nnNodes[0])])
     randomPredict = model.predict(randomInput)
 
     return model
