@@ -319,6 +319,9 @@ def main():
         # (they should be named chord_C_0.wav, chord_C_1.wav, chord_C#m_0.wav, ...)
         fileName = "chord_" + chord + "_"
 
+        # Create settings.chordsPath dir if it does not exist
+        subprocess.call(["mkdir", "-p", settings.chordsPath])
+
         # If there is no file with that name, the number following should be
         # zero. Otherwise, just add 1
         existingFiles = misc.ls(settings.chordsPath)
@@ -329,9 +332,6 @@ def main():
             nums = [f.split(".")[0].split("_")[-1] for f in existingFiles]
             highestNum = max([int(num) for num in nums])
             fileName += str(highestNum + 1)
-
-        # Create settings.chordsPath dir if it does not exist
-        subprocess.call(["mkdir", "-p", settings.chordsPath])
 
         # Write the signal to a file
         wavfile.write(settings.chordsPath + "/" + fileName + ".wav", sampleRate, signal)

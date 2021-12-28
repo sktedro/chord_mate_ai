@@ -17,6 +17,8 @@ trainingDataFileName = "training_data"
 testingDataFileName = "testing_data"
 # If the data file already exists, it will be loaded and new data will be 
 # appended. Otherwise, it will be created
+# To test with the training data, uncomment this:
+#  testingDataFileName = "training_data"
 
 modelPath = "./nn/"
 
@@ -74,4 +76,4 @@ trainingEpochs = 3
 inputsPerTraining = 100000
 
 # Number of training inputs after which the model should be recalculated
-batchSize = 1024
+batchSize = 32
