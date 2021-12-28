@@ -61,12 +61,12 @@ def ls(path):
 def train(model):
     # Load the training data from trainingDataPath (defined in prepare_data.py)
     print("Loading the data")
-    if ls(settings.trainingDataDir)[0] != settings.trainingDataFileName:
+    if not settings.trainingDataFileName in ls(settings.dataDir):
         print("No data available. Please run 'prepare_data' first.")
         quit(0)
 
     # Load the data and shuffle it
-    data = np.load(settings.trainingDataDir + "/" + settings.trainingDataFileName, allow_pickle=True)
+    data = np.load(settings.dataDir + "/" + settings.trainingDataFileName, allow_pickle=True)
     nnInputs = data["inputs"]
     nnOutputs = data["outputs"]
 

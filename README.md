@@ -116,3 +116,17 @@ Make sure you have:
  - Accuracy 99% with training-like data, but several chords in one file -
    progression
  - Accuracy 95% with actual music (with singing, pauses, ...) - song
+
+# TODOs
+ - Adaptive (to sampling frequency) FFT width and step?
+ - Is there a way to use two channels of the audio to produce more accurate
+   data?
+ - Data don't seem to be accurate enough
+ - Is it possible for the neural network to adjust the amount of hidden layers
+   and amounts of nodes in those layers? If not, at least use keras-tuner to
+   find the best amounts
+ - `make test` should run tests on the testing_data.npz
+ - For example, when generating a chord consisting of 3 notes, we can use one
+   note several times (with different order) to enrich the audio
+ - Fix `One of the files is corrupt. Continuing with the next chord.` warning
+   when generating chords (no files seem to be corrupt in reality)

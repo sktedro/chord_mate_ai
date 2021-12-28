@@ -168,9 +168,9 @@ def getNoteSynonyms(note):
     output = list(dict.fromkeys(output))
     return output
 
+# Pick randomly from files available containing the same note ('synonyms')
 def chooseNotesFiles(useNotesFiles):
-    # TODO pick randomly
-    return [synonyms[0] for synonyms in useNotesFiles]
+    return [synonyms[np.random.randint(len(synonyms))] for synonyms in useNotesFiles]
 
 ##########
 ## MAIN ##
@@ -188,6 +188,8 @@ def main():
     for i in range(amount):
 
         print("==================================================")
+
+        err = False
 
         # Randomly pick a chord (from len(targets) * len(notes) combinations)
         plainChord, chordType = pickChord(notes, targets)
@@ -268,21 +270,28 @@ def main():
         # Read the files and combine them into one
         signals = []
         sampleRates = []
-        corruptFile = False
         for path in useNotesPaths:
             #  print("Reading file:", path)
             sampleRate, signal = wavfile.read(path)
             if np.ndarray.max(np.absolute(np.array(signal))) == 0:
                 print("One of the files is corrupt. Continuing with the next chord.")
-                corruptFile = True
+                err = True
                 break
             signals.append(signal)
             sampleRates.append(sampleRate)
 
-        if corruptFile:
+        if err:
             continue
 
-        # TODO Check if all sampleRates match
+        # Check if all sampleRates match
+        tmp = sampleRates[0]
+        for sr in sampleRates:
+            if tmp != sr:
+                print("Sample rates of note files don't match. Continuing with the next chord.")
+                err = True
+
+        if err:
+            continue
 
         minLen = len(signals[0])
         for signal in signals:
@@ -295,7 +304,7 @@ def main():
         for signal in signalsBackup:
             signals.append(signal[: int(minLen)])
             # We can also use some offset since many files end with silence
-            #  signal = signal[: int(0.95 * minLen)]
+            #  signals.append(signal[: int(0.95 * minLen)])
 
         # Sum the signals
         signal = np.array(sum(signals))
@@ -306,7 +315,6 @@ def main():
 
         # Figure out a name for the file 
         # (they should be named chord_C_0.wav, chord_C_1.wav, chord_C#m_0.wav, ...)
-        # TODO name them based on settings, too?
         fileName = "chord_" + chord + "_"
 
         # If there is no file with that name, the number following should be

@@ -2,7 +2,7 @@
 
 # Parses data files in midi-js-soundfonts dataset so they can be used by
 # gen_chords.py to generate chords
-# Careful, from 9.2GB it makes the dataset TODO (by converting to .wav)
+# Careful, from 9.2GB it makes the dataset 18.7GB (by converting to .wav)
 
 DS1NAME="FatBoy"
 DS2NAME="FluidR3_GM"
@@ -83,6 +83,7 @@ process_folder(){
 
   done
 
+  echo "Finishing up dataset $DS"
   # Move the contents of the sub-dataset to the NEWDIR
   cp -r "$DS/"* "$NEWDIR"
   rm -rf "$DS"
@@ -126,3 +127,12 @@ mv "$NEWDIR/tubular_bells"         "$NEWDIR/0_short"
 mv "$NEWDIR/vibraphone"            "$NEWDIR/0_short"
 mv "$NEWDIR/woodblock"             "$NEWDIR/0_short"
 mv "$NEWDIR/xylophone"             "$NEWDIR/0_short"
+
+# Remove unwanted ones
+rm -rf "$NEWDIR/applause"
+rm -rf "$NEWDIR/bird_tweet"
+rm -rf "$NEWDIR/breath_noise"
+rm -rf "$NEWDIR/gunshot"
+rm -rf "$NEWDIR/helicopter"
+rm -rf "$NEWDIR/seashore"
+rm -rf "$NEWDIR/telephone_ring"

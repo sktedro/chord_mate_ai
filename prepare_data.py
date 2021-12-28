@@ -4,6 +4,8 @@ import subprocess
 import process_audio
 import settings
 
+# Notes: preparing data always appends to the old data, does not overwrite
+
 ###############
 ## FUNCTIONS ##
 ###############
@@ -17,8 +19,15 @@ def ls(path):
 
 def main():
     # TODO ARGUMENTS PARSING
-    # -s --shuffle to just shuffle
-    # -a --append to append to the existing file (will overwrite without it)
+    # test / train (target - testing or training data)
+    if len(sys.argv) < 2 or (sys.argv[1] != "test" and sys.argv[1] != "train"):
+        print("Please select the target: test / train")
+        quit(0)
+
+    if sys.argv[1] == "test":
+        dataFileName = settings.testingDataFileName
+    elif sys.argv[1] == "train":
+        dataFileName = settings.trainingDataFileName
 
     # Arrays where the acquired data will be written
     nnInputs = []
@@ -43,29 +52,33 @@ def main():
     print("Done generating inputs and outputs")
 
     # Create data dir if it does not exist
-    subprocess.call(["mkdir", "-p", settings.trainingDataDir])
+    subprocess.call(["mkdir", "-p", settings.dataDir])
 
     # Concat the old data with the new ones if old ones exist
-    if len(ls(settings.trainingDataDir)) and ls(settings.trainingDataDir)[0] == settings.trainingDataFileName:
-        oldData = np.load(settings.trainingDataDir + "/" + settings.trainingDataFileName, allow_pickle=True)
+    if len(ls(settings.dataDir)) and dataFileName in ls(settings.dataDir):
+        # Load the old training data
+        oldData = np.load(settings.dataDir + "/" + dataFileName, allow_pickle=True)
         oldInputs = oldData["inputs"]
         newInputs = np.concatenate((oldInputs, nnInputs))
         oldOutputs = oldData["outputs"]
         newOutputs = np.concatenate((oldOutputs, nnOutputs))
+        # Backup the old training data
+        subprocess.call(["mv", 
+        settings.dataDir + "/" + dataFileName, 
+        settings.dataDir + "/" + dataFileName + "_backup"])
+
     # Otherwise, just write the nnInputs and nnOutputs
     else:
         newInputs = nnInputs
         newOutputs = nnOutputs
 
     print("Saving the data")
-    # Backup the old training data
-    subprocess.call(["mv", 
-        settings.trainingDataDir + "/" + settings.trainingDataFileName, 
-        settings.trainingDataDir + "/" + settings.trainingDataFileName + "_backup"])
+
     # Output the data (compressed)
     np.savez_compressed(
-            settings.trainingDataDir + "/" + settings.trainingDataFileName, 
+            settings.dataDir + "/" + dataFileName, 
             inputs = newInputs, outputs = newOutputs)
+
     print("Done")
 
 if __name__ == "__main__":
