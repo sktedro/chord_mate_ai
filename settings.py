@@ -52,36 +52,32 @@ noteDuplicateProbability = 0.5
 ##############
 
 # Network layers and amounts of nodes they consist of
-# By the end of one training: 0.0043, converging just a tiny bit
-#  nnNodes = [96, 576, 144]
-# By the end of one training: 0.0042, not really converging any more
-#  nnNodes = [96, 2048, 144]
-# By the end of one training: 0.0045, not really converging any more
-#  nnNodes = [96, 288, 144]
-# By the end of one training: 0.0030, 
-# Performing okay after a lot of training (loss around 8e-04)
+
+# Best accuracy after the first training cycle: 62%
+#  nnNodes = [96, 144]
+
+# Best accuracy after the first training cycle: 75%
+nnNodes = [96, 512, 144]
+
+# Best accuracy after one training cycle: 74%
 #  nnNodes = [96, 512, 256, 144]
-# By the end of one training: 0.0023
-#  nnNodes = [96, 192, 576, 288, 144]
-# By the end of one training: 0.0024, converging just a tiny bit
+
 #  nnNodes = [96, 192, 256, 288, 144]
-# By the end of one training: 0.0015, stil converging slowly
+
 #  nnNodes = [96, 192, 256, 256, 288, 144]
-# By the end of one training: 0.0010, still converging slowly
-# Performing very well after just an hour of training (loss around 2-3e-04)
-nnNodes = [96, 192, 384, 1024, 576, 288, 144]
-# By the end of one training: 0.0021, converging
+
+# Performing very well after just an hour of training
+# Best accuracy after one training cycle: 72%
+#  nnNodes = [96, 192, 384, 1024, 576, 288, 144]
+
 #  nnNodes = [96, 384, 512, 1024, 1024, 576, 288, 144]
-# By the end of one training: 0.0064, converging
-# Loss around 5e-04 after an hour of training
-#  nnNodes = [96, 384, 1024, 2048, 1024, 576, 288, 144]
 
 # Epochs to train for in one training cycle
-trainingEpochs = 5
+trainingEpochs = 3
 
 # This divides the training data to chunks of size inputsPerTraining
 # Lower this number if the RAM limit is getting exceeded
 inputsPerTraining = 100000
 
 # Number of training inputs after which the model should be recalculated
-batchSize = 128
+batchSize = 32

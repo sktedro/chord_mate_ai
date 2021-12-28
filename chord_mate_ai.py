@@ -43,9 +43,9 @@ def newModel():
     model.add(tf.keras.Input(shape=(settings.nnNodes[0], )))
     for nodes in settings.nnNodes[1: -1]:
         model.add(tf.keras.layers.Dense(nodes, activation="tanh"))
-    model.add(tf.keras.layers.Dense(settings.nnNodes[-1], activation="tanh"))
+    model.add(tf.keras.layers.Dense(settings.nnNodes[-1], activation="softmax"))
 
-    model.compile(optimizer="adam", loss="binary_crossentropy")
+    model.compile(optimizer="adam", loss="categorical_crossentropy", metrics=["accuracy"])
 
     randomInput = np.array([np.random.random(inputNodes)])
     randomPredict = model.predict(randomInput)
