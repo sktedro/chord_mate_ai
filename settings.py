@@ -30,9 +30,9 @@ modelPath = "./nn/"
 ## AUDIO PROCESSING ##
 ######################
 
-fftWidth = 8192
+fftWidth = 4096
 #  fftStep = 2048
-fftStep = 4096
+fftStep = 2048
 # With sample rate 44100, this makes the FFT accuracy around 5Hz
 # TODO Make it adaptive to the sampling frequency? Or don't accept files with
 # Fs other than 44100?
@@ -57,15 +57,15 @@ noteDuplicateProbability = 0.5
 ## TRAINING ##
 ##############
 
-#  hiddenLayersActivationFn = "tanh"
+hiddenLayersActivationFn = "tanh"
 #  outputLayerActivationFn = "tanh"
-#  optimizer = "adam"
+optimizer = "adam"
 #  lossFunction = "mean_squared_error"
 
 # Better settings for categorization
-hiddenLayersActivationFn = "tanh"
+#  hiddenLayersActivationFn = "tanh"
 outputLayerActivationFn = "softmax"
-optimizer = "adam"
+#  optimizer = "adam"
 lossFunction = "categorical_crossentropy"
 
 
@@ -78,7 +78,7 @@ lossFunction = "categorical_crossentropy"
 nnNodes = [96, 192, 384, 1024, 576, 288, 144]
 
 # Epochs to train for in one training cycle
-trainingEpochs = 10
+trainingEpochs = 3
 
 # This divides the training data to chunks of size inputsPerTraining
 # Lower this number if the RAM limit is getting exceeded
@@ -86,4 +86,4 @@ inputsPerTraining = 100000
 
 # Number of training inputs after which the model should be recalculated
 #  [512 1024 2048]. Others seem to converge
-batchSize = 1024
+batchSize = 32

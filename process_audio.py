@@ -33,8 +33,55 @@ def getFrames(samples, sampleCount):
 
 def transformSignal(frames, sampleRate):
     magnitudes = abs(np.array([np.fft.fft(frames[k])[0: settings.fftWidth // 2] for k in range(len(frames))]))
+    #  magnitudes = abs(np.array([
+        #  np.fft.fft(a = frames[k], n = sampleRate) for k in range(len(frames))]))
     freqs = [k * sampleRate // settings.fftWidth for k in range(settings.fftWidth // 2)]
     return magnitudes, freqs
+
+#  def transformSignal(frames, sampleRate):
+    #  #  magnitudes = abs(np.array([np.fft.fft(frames[k])[0: settings.fftWidth // 2] for k in range(len(frames))]))
+
+    #  freq = 1000
+    #  samples = sampleRate / 4
+    #  f = np.arange(0, samples) / sampleRate * np.pi * 2
+    #  cos = np.cos(f * freq)
+
+    #  #  plt.plot(cos)
+
+    #  fft1 = abs(np.fft.fft(cos))
+    #  plt.plot(np.arange(0, sampleRate, 4), fft1)
+
+    #  fft2 = abs(np.fft.fft(cos * np.hanning(len(cos)), n = sampleRate))
+    #  plt.plot(np.arange(0, sampleRate, 1), fft2)
+
+    #  fft3 = abs(np.fft.fft(np.cos(freq * np.arange(0, sampleRate) / sampleRate * np.pi * 2)))
+    #  plt.plot(fft3)
+
+    #  plt.show()
+
+
+    #  #  frame = frames[5]
+    #  #  a = abs(np.fft.fft(a = frame, n = sampleRate))
+    #  #  #  a = abs(np.fft.fft(a = np.pad(frame, (0, sampleRate - len(frame)))))
+    #  #  tmp = abs(np.fft.fft(a = frame))
+
+    #  #  b = []
+    #  #  m = len(a) / len(tmp)
+    #  #  print(m)
+    #  #  for i in range(len(a)):
+        #  #  if i % int(m) == 0 and i // m < len(tmp):
+            #  #  b.append(tmp[int(np.round(i / m))])
+        #  #  else:
+            #  #  b.append(0)
+
+    #  #  plt.plot(b)
+    #  #  plt.plot(a)
+    #  #  plt.show()
+
+    #  quit(0)
+    #  freqs = [k * sampleRate // settings.fftWidth for k in range(settings.fftWidth // 2)]
+    #  return magnitudes, freqs
+
 
 def plotDft(freqs, magnitudes):
     plt.plot(freqs, magnitudes)
