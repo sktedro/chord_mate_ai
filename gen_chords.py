@@ -275,10 +275,29 @@ def main():
         for path in useNotesPaths:
             #  print("Reading file:", path)
             sampleRate, signal = wavfile.read(path)
-            if np.ndarray.max(np.absolute(np.array(signal))) == 0:
-                print("One of the files is corrupt. Continuing with the next chord.")
+            signalMin = np.ndarray.min(np.absolute(np.array(signal)))
+            signalMax = np.ndarray.max(np.absolute(np.array(signal)))
+            if signalMin == 0 and signalMax == 0:
+                print("One of the files is totally quiet. Continuing with the next chord.")
                 err = True
                 break
+                
+            # TODO Trim the signal in case it gets quiet after some time
+            step = 2205 # 50ms at 44.1kHz sampleRate
+            steps = len(signal) // step
+            threshold = 10 # Figured out by trial and error
+            for i in range(steps):
+                actMax = np.ndarray.max(abs(signal[i * step: (i + 1) * step]))
+                if actMax < threshold:
+                    if i == 0:
+                        print("One of the files is totally quiet. Continuing with the next chord.")
+                        err = True
+                        break
+                    print("Cropping", path.split("/")[-1], "from", len(signal), "to", i * step, "samples")
+                    signal = signal[: i * step]
+                    break
+
+
             signals.append(signal)
             sampleRates.append(sampleRate)
 

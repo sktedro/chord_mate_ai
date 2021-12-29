@@ -36,7 +36,6 @@ def transformSignal(frames, sampleRate):
     magnitudes = []
     trim = sampleRate // 2
     han = np.hanning(settings.fftWidth)
-    print(han)
 
     for k in range(len(frames)):
         a = frames[k] * han
@@ -314,10 +313,13 @@ def processAudio(path, training, verbose):
     magnitudes /= settings.fftWidth / 64
 
     # Plot the result
-    #  plotDft(freqs, magnitudes[5])
+    plotDft(freqs, magnitudes[5])
 
     # Get notes, exact notes freqs and magnitudes
     notes, noteFreqs, noteMags = getNoteMagnitudes(magnitudes, freqs, resolution)
+    for i in range(len(noteMags[5])):
+        if float("{:.2f}".format(noteMags[5][i])) > 0.1:
+            print(notes[i], ":", "{:.2f}".format(noteMags[5][i]))
 
     # Append the magnitudes to nnInputs
     for i in range(len(noteMags)):

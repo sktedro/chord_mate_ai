@@ -72,13 +72,13 @@ lossFunction = "categorical_crossentropy"
 # Best: 66%
 #  nnNodes = [96, 144]
 
-nnNodes = [96, 512, 144]
+#  nnNodes = [96, 512, 144]
 
 # Achieved 74% accuracy
-#  nnNodes = [96, 192, 384, 1024, 576, 288, 144]
+nnNodes = [96, 192, 384, 1024, 576, 288, 144]
 
 # Epochs to train for in one training cycle
-trainingEpochs = 3
+trainingEpochs = 5
 
 # This divides the training data to chunks of size inputsPerTraining
 # Lower this number if the RAM limit is getting exceeded
@@ -86,4 +86,4 @@ inputsPerTraining = 100000
 
 # Number of training inputs after which the model should be recalculated
 #  [512 1024 2048]. Others seem to converge
-batchSize = 32
+batchSize = 128
