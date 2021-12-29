@@ -24,7 +24,7 @@ testingDataFileName = "testing_data"
 # To test with the training data, uncomment this:
 #  testingDataFileName = "training_data"
 
-modelPath = "./nn/"
+modelPath = "./nn"
 
 ######################
 ## AUDIO PROCESSING ##
@@ -68,6 +68,13 @@ lossFunction = "mean_squared_error"
 #  optimizer = "adam"
 #  lossFunction = "categorical_crossentropy"
 
+# Layers:
+# Input layer:
+    # Inputs: Magnitudes of tones (A0, A#0, ..., G#0, A1, ..., G#7)
+    # Inputs amount: 12 * 8 = 96
+# Output layer:
+    # Outputs: Chords (A, A#, ..., G)(major, minor, 7, 5, ...)
+    # Outputs amount: 12 * 12 = 144
 
 # Best: 90.3%
 #  nnNodes = [96, 256, 512, 256, 144]

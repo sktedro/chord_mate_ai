@@ -1,19 +1,12 @@
-import os
+from os import environ
 # Disable the GPU because of tensorflow
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = "3"
-#  os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
-import tensorflow as tf
-from pydub import AudioSegment
-from scipy.io import wavfile
-from scipy import signal
-from math import e
+#  environ["CUDA_VISIBLE_DEVICES"] = "-1"
+environ['TF_CPP_MIN_LOG_LEVEL'] = "3"
+
+from tensorflow import keras
 import sys
 import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib
-import wave
-import subprocess
-import prepare_data
+
 import process_audio
 import settings
 from math import ceil
@@ -23,52 +16,11 @@ import misc
 ## FUNCTIONS ##
 ###############
 
-def sampleToTime(sampleNum, sampleRate):
-    return sampleNum / sampleRate
-
-# Layers:
-# Input layer: 
-    # Inputs: Magnitudes of tones (A0, A#0, ..., G#0, A1, ..., G#7)
-    # Inputs amount: 12 * 8 = 96
-# Output layer:
-    # Outputs: Chords (A, A#, ..., G)(major, minor, 7, 5, ...)
-    # Outputs amount: 12 * 12 = 144
-# TODO Also input some history or metadata?
-def newModel():
-    # Create a sequential model
-    model = tf.keras.Sequential()
-
-    # Input layer
-    model.add(
-            tf.keras.Input(
-                shape=(settings.nnNodes[0], )))
-
-    # Hidden layers
-    for nodes in settings.nnNodes[1: -1]:
-        model.add(
-                tf.keras.layers.Dense(
-                    nodes,
-                    activation=settings.hiddenLayersActivationFn))
-    # Output layer
-    model.add(
-            tf.keras.layers.Dense(
-                settings.nnNodes[-1],
-                activation=settings.outputLayerActivationFn))
-
-    # Compiling the model
-    model.compile(
-            optimizer=settings.optimizer,
-            loss=settings.lossFunction,
-            metrics=["accuracy"])
-
-    # To complete the model, a prediction must be made for whatever reason
-    randomInput = np.array([np.random.random(settings.nnNodes[0])])
-    randomPredict = model.predict(randomInput)
-
-    return model
-
-def saveModel(model):
-    model.save(settings.modelPath)
+def init():
+    model = misc.newModel()
+    misc.saveModel(model)
+    print("New model created and saved. Please run without init now.")
+    quit(0)
 
 def train(model):
     print("Training started, model saved")
@@ -95,7 +47,7 @@ def train(model):
                 shuffle=True)
 
     # Save the model
-    saveModel(model)
+    misc.saveModel(model)
     print("Training finished, model saved")
 
 def test(model):
@@ -108,7 +60,7 @@ def test(model):
     nnInputs, nnOutputs = misc.shuffleData(nnInputs, nnOutputs)
 
     # Just an array of all 144 chords
-    chordsStrings = process_audio.getChordsStringsArray()
+    chordsStrings = misc.getChordsStringsArray()
 
     print("Starting testing with", len(nnInputs), "data samples")
     predictions = model.predict(nnInputs)
@@ -134,7 +86,7 @@ def test(model):
 def predict(model, nnInputs, sampleRate):
 
     # Just an array of all 144 chords
-    chordsStrings = process_audio.getChordsStringsArray()
+    chordsStrings = misc.getChordsStringsArray()
 
     # Pass the noteMags to the neural network to get the chord for each frame
     predictions = model.predict(nnInputs)
@@ -146,7 +98,7 @@ def predict(model, nnInputs, sampleRate):
         confidence = max(predictions[i])
         chordIndex = np.where(predictions[i] == confidence)[0][0]
         if chordIndex != lastIndex:
-            fromTime = sampleToTime(i * settings.fftStep, sampleRate)
+            fromTime = misc.sampleToTime(i * settings.fftStep, sampleRate)
             print("From ", "{:.2f}".format(fromTime) + "s:",
                 "chord ", chordsStrings[chordIndex].ljust(7), 
                 " with confidence of ", str(int(confidence * 100)) + "%")
@@ -158,7 +110,7 @@ def predict(model, nnInputs, sampleRate):
         confidence = max(predictions[i])
         chordIndex = np.where(predictions[i] == confidence)[0][0]
         if chordIndex != lastIndex and confidence > 0.8:
-            fromTime = sampleToTime(i * settings.fftStep, sampleRate)
+            fromTime = misc.sampleToTime(i * settings.fftStep, sampleRate)
             print("From ", "{:.2f}".format(fromTime) + "s:",
                 "chord ", chordsStrings[chordIndex].ljust(7))
             lastIndex = chordIndex
@@ -166,9 +118,6 @@ def predict(model, nnInputs, sampleRate):
 ##########
 ## MAIN ##
 ##########
-
-# TODO call the generator from here - don't let it generate sample files but
-# return the wave here
 
 def main():
     print("==================================================")
@@ -178,25 +127,28 @@ def main():
         print("ERROR: Please specify an audio file or a special command")
         quit(1)
 
-    # Create and save a new model if the user wants to
+    # Initialize a new model
     if sys.argv[1] == "init":
-        # TODO are you sure?
-        model = newModel()
-        saveModel(model)
-        print("New model created and saved. Please run without init now.")
-        quit(0)
+        init()
 
     else:
         # Load the neural network (tf model)
-        # TODO check if there is a model saved
         print("Loading the model")
-        model = tf.keras.models.load_model(settings.modelPath)
+        try:
+            model = keras.models.load_model(settings.modelPath)
+        except:
+            print("ERROR: Model not found")
+            quit(1)
 
+        # Train
         if sys.argv[1] == "train":
             train(model)
+
+        # Test
         elif sys.argv[1] == "test":
             test(model)
 
+        # Predict
         else:
             nnInputs, nnOutputs, sampleRate = process_audio.processAudio(
                     path=sys.argv[1], training=False, verbose=True)
