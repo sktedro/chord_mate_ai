@@ -72,10 +72,10 @@ lossFunction = "categorical_crossentropy"
 # Best: 66%
 #  nnNodes = [96, 144]
 
-#  nnNodes = [96, 512, 144]
+nnNodes = [96, 512, 144]
 
 # Achieved 74% accuracy
-nnNodes = [96, 192, 384, 1024, 576, 288, 144]
+#  nnNodes = [96, 192, 384, 1024, 576, 288, 144]
 
 # Epochs to train for in one training cycle
 trainingEpochs = 3

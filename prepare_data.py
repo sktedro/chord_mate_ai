@@ -60,7 +60,10 @@ def main():
         fileNumbers.append(f.split(".")[0].split("_")[-1])
     biggestNumber = [int(i) for i in fileNumbers]
     biggestNumber.sort()
-    biggestNumber = biggestNumber[-1]
+    if len(biggestNumber) > 0:
+        biggestNumber = biggestNumber[-1]
+    else:
+        biggestNumber = 0
     lastFileName = dataFileName + "_" + str(biggestNumber) + ".npz"
     newFileName = lastFileName
 
