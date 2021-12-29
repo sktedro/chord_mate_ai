@@ -125,7 +125,6 @@ Make sure you have:
  - Is it possible for the neural network to adjust the amount of hidden layers
    and amounts of nodes in those layers? If not, at least use keras-tuner to
    find the best amounts
- - `make test` should run tests on the testing_data.npz
  - For example, when generating a chord consisting of 3 notes, we can use one
    note several times (with different order) to enrich the audio
  - Fix `One of the files is corrupt. Continuing with the next chord.` warning

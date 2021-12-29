@@ -6,12 +6,16 @@
 
 # Training .wav files are expected in chordsPath directory and with names like
 # chord_A5_0.wav, chord_E_1.wav, ...
+# Do not change this if you don't know what you're doing!
 chordsPath = "./audio/chords"
 
+# Do not change this if you don't know what you're doing!
 notesPath = "./audio/notes"
 
+# Do not change this if you don't know what you're doing!
 audioPath = "./audio"
 
+# Do not change these if you don't know what you're doing!
 dataDir = "./data"
 trainingDataFileName = "training_data"
 testingDataFileName = "testing_data"
@@ -57,23 +61,29 @@ noteDuplicateProbability = 0.5
 #  outputLayerActivationFn = "tanh"
 #  optimizer = "adam"
 #  lossFunction = "mean_squared_error"
-#  nnNodes = [96, 192, 384, 1024, 576, 288, 144]
 
 # Better settings for categorization
 hiddenLayersActivationFn = "tanh"
 outputLayerActivationFn = "softmax"
 optimizer = "adam"
 lossFunction = "categorical_crossentropy"
-#  nnNodes = [96, 144]
-nnNodes = [96, 512, 144]
 
+
+# Best: 66%
+#  nnNodes = [96, 144]
+
+#  nnNodes = [96, 512, 144]
+
+# Achieved 74% accuracy
+nnNodes = [96, 192, 384, 1024, 576, 288, 144]
 
 # Epochs to train for in one training cycle
-trainingEpochs = 3
+trainingEpochs = 10
 
 # This divides the training data to chunks of size inputsPerTraining
 # Lower this number if the RAM limit is getting exceeded
 inputsPerTraining = 100000
 
 # Number of training inputs after which the model should be recalculated
-batchSize = 32
+#  [512 1024 2048]. Others seem to converge
+batchSize = 1024
