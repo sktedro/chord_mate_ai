@@ -313,13 +313,10 @@ def processAudio(path, training, verbose):
     magnitudes /= settings.fftWidth / 64
 
     # Plot the result
-    plotDft(freqs, magnitudes[5])
+    #  plotDft(freqs, magnitudes[5])
 
     # Get notes, exact notes freqs and magnitudes
     notes, noteFreqs, noteMags = getNoteMagnitudes(magnitudes, freqs, resolution)
-    for i in range(len(noteMags[5])):
-        if float("{:.2f}".format(noteMags[5][i])) > 0.1:
-            print(notes[i], ":", "{:.2f}".format(noteMags[5][i]))
 
     # Append the magnitudes to nnInputs
     for i in range(len(noteMags)):
