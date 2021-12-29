@@ -246,13 +246,13 @@ def main():
             useNotes = getNotesInChord(plainChord, chordType, orders[i])
 
             # Filter the notes files to ones of the instrument picked
-            useNotesFiles = notesFiles[instruments.index(instrumentsUsed[i])]
+            useNotesFiles = notesFiles[instruments.index(instrumentsUsed[i])].copy()
 
             # !! Gb is the same as F# and so on! It needs to be accepted
-            useNotes = [getNoteSynonyms(note) for note in useNotes]
+            useNotes = [getNoteSynonyms(note) for note in useNotes].copy()
 
             # Filter the note files to ones contained in the picked chord
-            useNotesFilesBackup = useNotesFiles
+            useNotesFilesBackup = useNotesFiles.copy()
             useNotesFiles = []
             for noteSynonyms in useNotes:
                 actNoteFiles = []
@@ -265,10 +265,10 @@ def main():
 
             # If it is a mp3 file, check if there is a wav with the same name. If
             # not, convert it to a wav file with the same name
-            useNotesFilesBackup = useNotesFiles
+            useNotesFilesBackup = useNotesFiles.copy()
             useNotesFiles = []
             for actNotesFiles in useNotesFilesBackup:
-                actNotesFilesBackup = actNotesFiles
+                actNotesFilesBackup = actNotesFiles.copy()
                 actNotesFiles = []
                 for fileName in actNotesFilesBackup:
                     if ".mp3" in fileName:
@@ -326,12 +326,10 @@ def main():
                 minLen = len(signal)
 
         # Trim the signals by the minimum length of the files
-        signalsBackup = signals
+        signalsBackup = signals.copy()
         signals = []
         for signal in signalsBackup:
             signals.append(signal[: int(minLen)])
-            # We can also use some offset since many files end with silence
-            #  signals.append(signal[: int(0.95 * minLen)])
 
         # Sum the signals
         signal = np.array(sum(signals))

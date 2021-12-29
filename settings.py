@@ -58,32 +58,32 @@ noteDuplicateProbability = 0.5
 ##############
 
 hiddenLayersActivationFn = "tanh"
-#  outputLayerActivationFn = "tanh"
+outputLayerActivationFn = "tanh"
 optimizer = "adam"
-#  lossFunction = "mean_squared_error"
+lossFunction = "mean_squared_error"
 
 # Better settings for categorization
 #  hiddenLayersActivationFn = "tanh"
-outputLayerActivationFn = "softmax"
+#  outputLayerActivationFn = "softmax"
 #  optimizer = "adam"
-lossFunction = "categorical_crossentropy"
+#  lossFunction = "categorical_crossentropy"
 
 
-# Best: 66%
-#  nnNodes = [96, 144]
+# Best: 90.3%
+#  nnNodes = [96, 256, 512, 256, 144]
 
-#  nnNodes = [96, 512, 144]
+nnNodes = [96, 512, 1024, 512, 144]
 
-# Achieved 74% accuracy
-nnNodes = [96, 192, 384, 1024, 576, 288, 144]
+# Achieved 90% accuracy
+#  nnNodes = [96, 192, 384, 1024, 576, 288, 144]
 
 # Epochs to train for in one training cycle
-trainingEpochs = 5
+trainingEpochs = 1
 
 # This divides the training data to chunks of size inputsPerTraining
 # Lower this number if the RAM limit is getting exceeded
-inputsPerTraining = 100000
+inputsPerTraining = 500000
 
 # Number of training inputs after which the model should be recalculated
 #  [512 1024 2048]. Others seem to converge
-batchSize = 128
+batchSize = 32
