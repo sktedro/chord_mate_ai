@@ -11,8 +11,8 @@ def shuffleData(inputs, outputs):
     # Create random indices
     destIndices = np.arange(len(inputs))
     np.random.shuffle(destIndices)
-    inputsBackup = inputs
-    outputsBackup = outputs
+    inputsBackup = inputs.copy()
+    outputsBackup = outputs.copy()
 
     # Move the inputs and outputs to a new array based on these indices
     for i in range(len(destIndices)):
