@@ -97,9 +97,11 @@ process_folder "$DSDIR" "$DS3NAME" "$NEWDIR" "2"
 
 # Move short ones into their own folder (0_short)
 mkdir "$NEWDIR/0_short"
+
 mv "$NEWDIR/acoustic_bass"         "$NEWDIR/0_short"
 mv "$NEWDIR/agogo"                 "$NEWDIR/0_short"
 mv "$NEWDIR/banjo"                 "$NEWDIR/0_short"
+mv "$NEWDIR/celesta"               "$NEWDIR/0_short"
 mv "$NEWDIR/dulcimer"              "$NEWDIR/0_short"
 mv "$NEWDIR/electric_guitar_muted" "$NEWDIR/0_short"
 mv "$NEWDIR/glockenspiel"          "$NEWDIR/0_short"

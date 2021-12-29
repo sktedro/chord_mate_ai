@@ -42,8 +42,8 @@ fftStep = 2048
 ######################
 
 # Orders of notes to use when constructing chords
-minOrder = 0
-maxOrder = 7
+minOrder = 2
+maxOrder = 5
 
 # If set to true, instruments playing chords may differ (if chordsAmount > 1)
 # (the generated audio could consist of chords played by different instruments)

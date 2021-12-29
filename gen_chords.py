@@ -170,6 +170,28 @@ def getNoteSynonyms(note):
 def chooseNotesFiles(useNotesFiles):
     return [synonyms[np.random.randint(len(synonyms))] for synonyms in useNotesFiles]
 
+# https://www.audiolabs-erlangen.de/resources/MIR/FMP/C1/C1S3_Dynamics.html
+def compute_power(x, Fs):
+    win_len_sec=0.05
+    power_ref=10**(-12)
+    """Computation of the signal power in dB
+
+    Notebook: C1/C1S3_Dynamics.ipynb
+
+    Args:
+        x (np.ndarray): Signal (waveform) to be analyzed
+        Fs (scalar): Sampling rate
+        win_len_sec (float): Length (seconds) of the window (Default value = 0.1)
+        power_ref (float): Reference power level (0 dB) (Default value = 10**(-12))
+
+    Returns:
+        power_db (np.ndarray): Signal power in dB
+    """
+    win_len = round(win_len_sec * Fs)
+    win = np.ones(win_len) / win_len
+    power_db = np.log10(np.convolve(x**2, win, mode='same') / power_ref)
+    return power_db
+
 ##########
 ## MAIN ##
 ##########
@@ -282,22 +304,6 @@ def main():
                 err = True
                 break
                 
-            # TODO Trim the signal in case it gets quiet after some time
-            step = 2205 # 50ms at 44.1kHz sampleRate
-            steps = len(signal) // step
-            threshold = 10 # Figured out by trial and error
-            for i in range(steps):
-                actMax = np.ndarray.max(abs(signal[i * step: (i + 1) * step]))
-                if actMax < threshold:
-                    if i == 0:
-                        print("One of the files is totally quiet. Continuing with the next chord.")
-                        err = True
-                        break
-                    print("Cropping", path.split("/")[-1], "from", len(signal), "to", i * step, "samples")
-                    signal = signal[: i * step]
-                    break
-
-
             signals.append(signal)
             sampleRates.append(sampleRate)
 
@@ -333,6 +339,8 @@ def main():
         # Also make it exactly in a range of a short int
         multiplier = (32767 / 2) / np.ndarray.max(np.absolute(signal))
         signal = np.multiply(signal, multiplier).astype(np.int16)
+
+        # TODO Trim the signal in case it gets quiet after some time
 
         # Figure out a name for the file 
         # (they should be named chord_C_0.wav, chord_C_1.wav, chord_C#m_0.wav, ...)
