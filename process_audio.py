@@ -2,9 +2,13 @@ import os
 from pydub import AudioSegment 
 import sys
 import numpy as np
-#  import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 import wave
 import subprocess
+from scipy import signal
+from pydub.playback import play
+
+import pyloudnorm as pyln
 
 import misc
 import settings
@@ -13,6 +17,45 @@ import fourier_transform
 ###############
 ## FUNCTIONS ##
 ###############
+
+def plotSpectrogram(frequencies, spectrogram, audioLength):
+    time = np.arange(0, audioLength, audioLength / len(spectrogram[0]))
+    print(len(spectrogram[0]))
+    plt.pcolormesh(time, frequencies, spectrogram, shading='gouraud')
+    plt.show()
+
+def getSpectrogram(magnitudes):
+    return np.transpose(10 * np.log10(abs(magnitudes) ** 2))
+
+
+def cropByLoudness(inputSignal, verbose):
+    sampleSize = 1024
+
+    threshold = -65
+
+    meter = pyln.Meter(sampleSize)
+    samples = []
+    zeroPaddedSignal = np.concatenate((np.array(inputSignal), np.zeros(sampleSize)))
+    for i in np.arange(0, len(inputSignal), sampleSize):
+        if i < len(zeroPaddedSignal) - sampleSize:
+            samples.append(zeroPaddedSignal[i: i + sampleSize])
+
+    zeroPaddedSignal = np.array(zeroPaddedSignal / max(abs(zeroPaddedSignal))).astype(np.float32)
+
+    loudness = []
+    for sample in samples:
+        loudness.append(meter.integrated_loudness(sample))
+
+    quietSampleIndex = np.where(np.array(loudness) < threshold)[0]
+    if len(quietSampleIndex) > 0:
+        quietSampleIndex = quietSampleIndex[0]
+        outputSignal = inputSignal[: sampleSize * quietSampleIndex]
+        if verbose:
+            print("Cropping", quietSampleIndex + 1, "samples from", len(loudness), "total")
+    else:
+        outputSignal = inputSignal
+
+    return outputSignal
 
 def getNoteMagnitudes(ffts, freqs):
     output = []
@@ -56,8 +99,11 @@ def processAudio(path, training, verbose):
     # Get chords strings in an array shaped the same as predictions
     chordsStrings = misc.getChordsStringsArray()
 
+    # Read the wav file
+    sampleRate, samples = wavfile.read(path)
+
     # Perform the fourier transform
-    freqs, magnitudes, sampleRate = fourier_transform.fourier_transform(path, verbose)
+    freqs, magnitudes = fourier_transform.fourier_transform(samples, sampleRate, verbose)
 
     # Get notes, exact notes freqs and magnitudes
     notes, noteFreqs, noteMags = getNoteMagnitudes(magnitudes, freqs)

@@ -46,8 +46,7 @@ def plotDft(freqs, magnitudes):
     plt.xlabel("Frequency [Hz]")
     plt.show()
 
-def fourier_transform(path, verbose):
-    sampleRate, samples = wavfile.read(path)
+def fourier_transform(samples, sampleRate, verbose):
     sampleCount = len(samples)
     audioLength = sampleCount / sampleRate
     resolution = sampleRate / settings.fftWidth + 1 # + 1 for some tolerance
@@ -82,4 +81,4 @@ def fourier_transform(path, verbose):
     # Plot the result
     #  plotDft(freqs, magnitudes[5])
 
-    return freqs, magnitudes, sampleRate
+    return freqs, magnitudes

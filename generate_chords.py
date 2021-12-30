@@ -1,3 +1,5 @@
+from os import environ
+environ['TF_CPP_MIN_LOG_LEVEL'] = "3"
 import sys
 import numpy as np
 import subprocess
@@ -6,6 +8,7 @@ import matplotlib.pyplot as plt
 import struct
 import settings
 import misc
+import process_audio
 
 ######################
 ## GLOBAL VARIABLES ##
@@ -297,14 +300,23 @@ def main():
         for path in useNotesPaths:
             #  print("Reading file:", path)
             sampleRate, signal = wavfile.read(path)
-            signalMin = np.ndarray.min(np.absolute(np.array(signal)))
-            signalMax = np.ndarray.max(np.absolute(np.array(signal)))
-            if signalMin == 0 and signalMax == 0:
-                print("One of the files is totally quiet. Continuing with the next chord.")
-                err = True
-                break
-                
-            signals.append(signal)
+
+            # Crop the signal by loudness (remove the quiet part)
+            croppedSignal = []
+            for sig in np.transpose(signal):
+                sig = process_audio.cropByLoudness(sig, verbose = False)
+
+                if len(sig) < settings.fftWidth:
+                    print("One of the files is totally quiet. Continuing with the next chord.")
+                    err = True
+                    break
+
+                signals.append(sig)
+                #  croppedSignal.append(sig)
+
+            #  croppedSignal = np.transpose(croppedSignal)
+
+            #  signals.append(croppedSignal)
             sampleRates.append(sampleRate)
 
         if err:
@@ -324,6 +336,7 @@ def main():
         for signal in signals:
             if len(signal) < minLen:
                 minLen = len(signal)
+        print("Signal cropped to", "{:.2f}".format(minLen / sampleRate), "seconds")
 
         # Trim the signals by the minimum length of the files
         signalsBackup = signals.copy()
@@ -335,10 +348,8 @@ def main():
         signal = np.array(sum(signals))
 
         # Also make it exactly in a range of a short int
-        multiplier = (32767 / 2) / np.ndarray.max(np.absolute(signal))
+        multiplier = (32767 / 2) / max(abs(signal))
         signal = np.multiply(signal, multiplier).astype(np.int16)
-
-        # TODO Trim the signal in case it gets quiet after some time
 
         # Figure out a name for the file 
         # (they should be named chord_C_0.wav, chord_C_1.wav, chord_C#m_0.wav, ...)
