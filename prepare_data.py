@@ -11,20 +11,20 @@ import misc
 ## FUNCTIONS ##
 ###############
 
-def saveData(newInputs, newOutputs, fileName, fileNumber):
+def saveData(dataDir, newInputs, newOutputs, fileName, fileNumber, fileDataLimit):
     print("Saving the data")
 
     while len(newInputs) != 0:
 
         # Split the files to max 150k long chunks
-        if len(newInputs) > 150000:
+        if len(newInputs) > fileDataLimit:
             # Save the data (compressed)
             np.savez_compressed(
-                    settings.dataDir + "/" + fileName, 
-                    inputs = newInputs[0: 150000], outputs = newOutputs[0: 150000])
+                    dataDir + "/" + fileName, 
+                    inputs = newInputs[0: fileDataLimit], outputs = newOutputs[0: fileDataLimit])
 
-            newInputs = newInputs[150000: len(newInputs)]
-            newOutputs = newOutputs[150000: len(newOutputs)]
+            newInputs = newInputs[fileDataLimit: len(newInputs)]
+            newOutputs = newOutputs[fileDataLimit: len(newOutputs)]
 
             fileName = fileName.replace(str(fileNumber), str(fileNumber + 1))
             fileNumber += 1
@@ -32,17 +32,16 @@ def saveData(newInputs, newOutputs, fileName, fileNumber):
         else:
             # Save the data (compressed)
             np.savez_compressed(
-                    settings.dataDir + "/" + fileName, 
+                    dataDir + "/" + fileName, 
                     inputs = newInputs, outputs = newOutputs)
 
             newInputs = []
             newOutputs = []
     print("Data saved")
 
-
-def getNewFileName(dataFileName):
+def getNewFileName(dataDir, dataFileName):
     fileNumbers = []
-    for f in misc.ls(settings.dataDir):
+    for f in misc.ls(dataDir):
         if (not dataFileName in f) or "backup" in f:
             continue
         fileNumbers.append(f.split(".")[0].split("_")[-1])
@@ -55,11 +54,11 @@ def getNewFileName(dataFileName):
     fileName = dataFileName + "_" + str(fileNumber) + ".npz"
     return fileName, fileNumber
 
-def concatOldData(fileName, nnInputs, nnOutputs):
-    if fileName in misc.ls(settings.dataDir):
+def concatOldData(dataDir, fileName, nnInputs, nnOutputs):
+    if fileName in misc.ls(dataDir):
         # Load the old training data (the last file)
         print("Loading the old data")
-        oldData = np.load(settings.dataDir + "/" + fileName, allow_pickle=True)
+        oldData = np.load(dataDir + "/" + fileName, allow_pickle=True)
         oldInputs = oldData["inputs"]
         newInputs = np.concatenate((oldInputs, nnInputs))
         oldOutputs = oldData["outputs"]
@@ -67,8 +66,8 @@ def concatOldData(fileName, nnInputs, nnOutputs):
         # Backup the old training data
         print("Creating a backup")
         subprocess.call(["mv",
-            settings.dataDir + "/" + fileName,
-            settings.dataDir + "/" + fileName.split(".")[0] + "_backup" + "." + fileName.split(".")[1]])
+            dataDir + "/" + fileName,
+            dataDir + "/" + fileName.split(".")[0] + "_backup" + "." + fileName.split(".")[1]])
 
     # Otherwise, just write the nnInputs and nnOutputs
     else:
@@ -77,21 +76,23 @@ def concatOldData(fileName, nnInputs, nnOutputs):
 
     return newInputs, newOutputs
 
-def processFiles():
+def processFiles(audioDir, processFunction):
     # Arrays where the acquired data will be written
     nnInputs = []
     nnOutputs = []
 
     # All files to process
-    inputFiles = misc.ls(settings.chordsPath)
+    inputFiles = misc.ls(audioDir)
 
     for inputFile in inputFiles:
         print("Processing file", inputFiles.index(inputFile) + 1, "of", len(inputFiles))
 
         # Get the data and save it to the nnArrays
-        path = settings.chordsPath + "/" + inputFile
-        inputs, outputs, sampleRate = process_audio.processAudio(
+        path = audioDir + "/" + inputFile
+        inputs, outputs, sampleRate = processFunction(
                 path=path, training=True, verbose=False)
+        inputs = np.transpose(np.transpose(inputs)[: settings.fs // 4])
+
         if len(nnInputs) == 0 and len(nnOutputs) == 0:
             nnInputs = np.array(inputs)
             nnOutputs = np.array(outputs)
@@ -104,16 +105,33 @@ def processFiles():
     return nnInputs, nnOutputs
 
 def parseArgs():
-    if len(sys.argv) < 2 or (sys.argv[1] != "test" and sys.argv[1] != "train"):
-        print("Please select the target: test / train")
+    if len(sys.argv) < 3:
+        print("Please select the targets: test / train and notes / chords")
         quit(0)
 
     if sys.argv[1] == "test":
         dataFileName = settings.testingDataFileName
     elif sys.argv[1] == "train":
         dataFileName = settings.trainingDataFileName
+    else:
+        print("Unknown target:", sys.argv[1])
+        quit(0)
 
-    return dataFileName
+    if sys.argv[2] == "notes":
+        dataDir = settings.noteDetDataDir
+        audioDir = settings.generatedNotesPath
+        processFunction = process_audio.processNotes
+        fileDataLimit = 1000
+    elif sys.argv[2] == "chords":
+        dataDir = settings.dataDir
+        audioDir = settings.chordsPath
+        processFunction = process_audio.processAudio
+        fileDataLimit = 150000 # TODO
+    else:
+        print("Unknown target:", sys.argv[2])
+        quit(0)
+
+    return audioDir, dataDir, dataFileName, processFunction, fileDataLimit
 
 ##########
 ## MAIN ##
@@ -121,22 +139,22 @@ def parseArgs():
 
 def main():
     # The first argument: test / train (target - testing or training data)
-    dataFileName = parseArgs()
+    audioDir, dataDir, dataFileName, processFunction, fileDataLimit = parseArgs()
 
     # Process all the files (get inputs and outputs)
-    nnInputs, nnOutputs = processFiles()
+    nnInputs, nnOutputs = processFiles(audioDir, processFunction)
 
     # Create data dir if it does not exist
-    subprocess.call(["mkdir", "-p", settings.dataDir])
+    subprocess.call(["mkdir", "-p", dataDir])
 
     # Get the name of the last training data file
-    fileName, fileNumber = getNewFileName(dataFileName)
+    fileName, fileNumber = getNewFileName(dataDir, dataFileName)
 
     # Concat the old data with the new ones if old ones exist
-    newInputs, newOutputs = concatOldData(fileName, nnInputs, nnOutputs)
+    newInputs, newOutputs = concatOldData(dataDir, fileName, nnInputs, nnOutputs)
 
     # Save all the data
-    saveData(newInputs, newOutputs, fileName, fileNumber)
+    saveData(dataDir, newInputs, newOutputs, fileName, fileNumber, fileDataLimit)
 
     print("Done")
 

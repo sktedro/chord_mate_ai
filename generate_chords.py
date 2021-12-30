@@ -173,28 +173,6 @@ def getNoteSynonyms(note):
 def chooseNotesFiles(useNotesFiles):
     return [synonyms[np.random.randint(len(synonyms))] for synonyms in useNotesFiles]
 
-# https://www.audiolabs-erlangen.de/resources/MIR/FMP/C1/C1S3_Dynamics.html
-def compute_power(x, Fs):
-    win_len_sec=0.05
-    power_ref=10**(-12)
-    """Computation of the signal power in dB
-
-    Notebook: C1/C1S3_Dynamics.ipynb
-
-    Args:
-        x (np.ndarray): Signal (waveform) to be analyzed
-        Fs (scalar): Sampling rate
-        win_len_sec (float): Length (seconds) of the window (Default value = 0.1)
-        power_ref (float): Reference power level (0 dB) (Default value = 10**(-12))
-
-    Returns:
-        power_db (np.ndarray): Signal power in dB
-    """
-    win_len = round(win_len_sec * Fs)
-    win = np.ones(win_len) / win_len
-    power_db = np.log10(np.convolve(x**2, win, mode='same') / power_ref)
-    return power_db
-
 ##########
 ## MAIN ##
 ##########

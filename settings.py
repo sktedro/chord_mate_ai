@@ -1,5 +1,8 @@
 # All settings in one place
 
+# Sampling frequency
+fs = 44100
+
 ###########
 ## PATHS ##
 ###########
@@ -8,6 +11,7 @@
 # chord_A5_0.wav, chord_E_1.wav, ...
 # Do not change this if you don't know what you're doing!
 chordsPath = "./audio/chords"
+generatedNotesPath = "./audio/notes_generated"
 
 # Do not change this if you don't know what you're doing!
 notesPath = "./audio/notes"
@@ -17,6 +21,7 @@ audioPath = "./audio"
 
 # Do not change these if you don't know what you're doing!
 dataDir = "./data"
+noteDetDataDir = "./data_note_detection"
 trainingDataFileName = "training_data"
 testingDataFileName = "testing_data"
 # If the data file already exists, it will be loaded and new data will be 
@@ -25,6 +30,7 @@ testingDataFileName = "testing_data"
 #  testingDataFileName = "training_data"
 
 modelPath = "./nn"
+noteDetModelPath = "./nn_note_detection"
 
 ######################
 ## AUDIO PROCESSING ##
@@ -49,6 +55,8 @@ maxOrder = 5
 # (the generated audio could consist of chords played by different instruments)
 mixInstruments = True
 
+noteGenMixInstruments = False
+
 # Probability that a note in a chord will be there twice (second time with
 # higher order)
 noteDuplicateProbability = 0.5
@@ -56,6 +64,33 @@ noteDuplicateProbability = 0.5
 ##############
 ## TRAINING ##
 ##############
+
+# General settings
+
+threadLimit = 6
+
+
+# Note detection settings
+
+noteDetHiddenLayersActivationFn = "tanh"
+noteDetOutputLayerActivationFn = "tanh"
+noteDetOptimizer = "adam"
+noteDetLossFunction = "mean_squared_error"
+
+noteDetNnNodes = [fs // 4, 512, 128, 12]
+
+# Epochs to train for in one training cycle
+noteDetTrainingEpochs = 3
+
+# This divides the training data to chunks of size inputsPerTraining
+# Lower this number if the RAM limit is getting exceeded
+noteDetInputsPerTraining = 10000
+
+# Number of training inputs after which the model should be recalculated
+noteDetBatchSize = 32
+
+
+# Chord detection settings
 
 hiddenLayersActivationFn = "tanh"
 outputLayerActivationFn = "tanh"
@@ -85,7 +120,7 @@ nnNodes = [96, 512, 1024, 512, 144]
 #  nnNodes = [96, 192, 384, 1024, 576, 288, 144]
 
 # Epochs to train for in one training cycle
-trainingEpochs = 1
+trainingEpochs = 3
 
 # This divides the training data to chunks of size inputsPerTraining
 # Lower this number if the RAM limit is getting exceeded
@@ -93,4 +128,4 @@ inputsPerTraining = 500000
 
 # Number of training inputs after which the model should be recalculated
 #  [512 1024 2048]. Others seem to converge
-batchSize = 32
+batchSize = 64

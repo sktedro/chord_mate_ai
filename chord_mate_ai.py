@@ -17,8 +17,13 @@ import misc
 ###############
 
 def init():
-    model = misc.newModel()
-    misc.saveModel(model)
+    model = misc.newModel(settings.nnNodes,
+            settings.hiddenLayersActivationFn,
+            settings.outputLayerActivationFn,
+            settings.optimizer,
+            settings.lossFunction
+            )
+    misc.saveModel(model, settings.modelPath)
     print("New model created and saved. Please run without init now.")
     quit(0)
 
@@ -26,7 +31,7 @@ def train(model):
     print("Training started, model saved")
 
     # Load the training data from trainingDataPath (defined in settings.py)
-    nnInputs, nnOutputs = misc.loadData(settings.trainingDataFileName)
+    nnInputs, nnOutputs = misc.loadData(settings.dataDir, settings.trainingDataFileName)
 
     # Shuffle the data
     nnInputs, nnOutputs = misc.shuffleData(nnInputs, nnOutputs)
@@ -47,14 +52,14 @@ def train(model):
                 shuffle=True)
 
     # Save the model
-    misc.saveModel(model)
+    misc.saveModel(model, settings.modelPath)
     print("Training finished, model saved")
 
 def test(model):
     print("Testing started")
 
     # Load the training data from trainingDataPath (defined in settings.py)
-    nnInputs, nnOutputs = misc.loadData(settings.testingDataFileName)
+    nnInputs, nnOutputs = misc.loadData(settings.dataDir, settings.testingDataFileName)
 
     # Shuffle the data
     nnInputs, nnOutputs = misc.shuffleData(nnInputs, nnOutputs)

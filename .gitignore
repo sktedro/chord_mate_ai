@@ -2,4 +2,4 @@
 audio/
 datasets/
 __pycache__/
-data/
+data*/

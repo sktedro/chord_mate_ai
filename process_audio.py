@@ -7,6 +7,7 @@ import wave
 import subprocess
 from scipy import signal
 from pydub.playback import play
+from scipy.io import wavfile
 
 import pyloudnorm as pyln
 
@@ -92,15 +93,67 @@ def getFileName(path):
             quit(1)
     return fileName
 
+def processNotes(path, training, verbose):
+    # Get the file name and convert to wav if needed
+    fileName = getFileName(path)
+
+    # Read the wav file
+    sampleRate, samples = wavfile.read(path)
+    if sampleRate != 44100:
+        print("Sorry, no other sampling frequency than 44100Hz is currently supported")
+        quit(0)
+
+    # Perform the fourier transform
+    freqs, magnitudes = fourier_transform.fourier_transform(samples, sampleRate, verbose)
+
+    # Arrays where the acquired data will be written
+    nnInputs = magnitudes
+
+    nnOutputs = []
+    if training:
+        # Get note strings in an array shaped the same as predictions
+        notesStringsSharp = misc.getNotesStringsArray(semitoneChar="#")
+        notesStringsFlat = misc.getNotesStringsArray(semitoneChar="b")
+
+        notes = fileName.split("_")[1: -1]
+        output = np.zeros(12)
+        for note in notes:
+            if note in notesStringsSharp:
+                index = np.where(notesStringsSharp == note)
+            elif note in notesStringsFlat:
+                index = np.where(notesStringsFlat == note)
+            else:
+                print("Invalid file name:", fileName)
+                quit(1)
+            if len(index) > 0:
+                index = index[0]
+            output[index % 12] = 1.0
+        print("Notes contained:", 
+                [str(notesStringsSharp[i]).replace("0", "")
+                    for i in range(len(output)) if output[i] == 1])
+
+        for i in range(len(nnInputs)):
+            nnOutputs.append(output)
+
+    nnInputs = np.array(nnInputs)
+    nnOutputs = np.array(nnOutputs)
+    #  print(nnInputs.shape)
+    #  print(nnOutputs.shape)
+    #  print(nnInputs)
+    #  print(nnOutputs)
+
+    return nnInputs, nnOutputs, sampleRate
+
+
 def processAudio(path, training, verbose):
     # Get the file name and convert to wav if needed
     fileName = getFileName(path)
 
-    # Get chords strings in an array shaped the same as predictions
-    chordsStrings = misc.getChordsStringsArray()
-
     # Read the wav file
     sampleRate, samples = wavfile.read(path)
+    if sampleRate != 44100:
+        print("Sorry, no other sampling frequency than 44100Hz is currently supported")
+        quit(0)
 
     # Perform the fourier transform
     freqs, magnitudes = fourier_transform.fourier_transform(samples, sampleRate, verbose)
@@ -113,6 +166,9 @@ def processAudio(path, training, verbose):
 
     nnOutputs = []
     if training:
+        # Get chords strings in an array shaped the same as predictions
+        chordsStrings = misc.getChordsStringsArray()
+
         chordIndex = chordsStrings.index(fileName.split("_")[1])
         output = np.zeros(144)
         output[chordIndex] = 1.0
