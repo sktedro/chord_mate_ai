@@ -24,6 +24,10 @@ dataDir = "./data"
 noteDetDataDir = "./data_note_detection"
 trainingDataFileName = "training_data"
 testingDataFileName = "testing_data"
+
+#  trainingDataFileName = "testing_data"
+#  testingDataFileName = "training_data"
+
 # If the data file already exists, it will be loaded and new data will be 
 # appended. Otherwise, it will be created
 # To test with the training data, uncomment this:
@@ -55,11 +59,18 @@ maxOrder = 5
 # (the generated audio could consist of chords played by different instruments)
 mixInstruments = True
 
-noteGenMixInstruments = False
-
 # Probability that a note in a chord will be there twice (second time with
 # higher order)
 noteDuplicateProbability = 0.5
+
+#####################
+## NOTE GENERATION ##
+#####################
+
+minNoteOrder = 0
+maxNoteOrder = 7
+
+noteGenMixInstruments = True
 
 ##############
 ## TRAINING ##
@@ -67,24 +78,28 @@ noteDuplicateProbability = 0.5
 
 # General settings
 
-threadLimit = 6
+threadLimit = 7
 
 
 # Note detection settings
 
-noteDetHiddenLayersActivationFn = "tanh"
-noteDetOutputLayerActivationFn = "tanh"
-noteDetOptimizer = "adam"
-noteDetLossFunction = "mean_squared_error"
+noteDetHiddenLayersActivationFn = "sigmoid"
+noteDetOutputLayerActivationFn = "sigmoid"
 
-noteDetNnNodes = [fs // 4, 512, 128, 12]
+noteDetOptimizer = "adam"
+
+#  noteDetLossFunction = "mean_squared_error"
+noteDetLossFunction = "binary_crossentropy"
+
+#  noteDetNnNodes = [816, 256, 12]
+noteDetNnNodes = [816, 1024, 128, 12]
 
 # Epochs to train for in one training cycle
-noteDetTrainingEpochs = 3
+noteDetTrainingEpochs = 5
 
 # This divides the training data to chunks of size inputsPerTraining
 # Lower this number if the RAM limit is getting exceeded
-noteDetInputsPerTraining = 10000
+noteDetInputsPerTraining = 500000
 
 # Number of training inputs after which the model should be recalculated
 noteDetBatchSize = 32
@@ -128,4 +143,4 @@ inputsPerTraining = 500000
 
 # Number of training inputs after which the model should be recalculated
 #  [512 1024 2048]. Others seem to converge
-batchSize = 64
+batchSize = 32

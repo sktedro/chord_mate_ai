@@ -7,6 +7,7 @@ from tensorflow import keras, config
 from math import ceil
 import sys
 import numpy as np
+import matplotlib.pyplot as plt
 
 import process_audio
 import settings
@@ -69,6 +70,10 @@ def test(model):
     predictions = model.predict(nnInputs)
     right = 0
     wrong = 0
+    right2 = 0
+    wrong2 = 0
+    right3 = 0
+    wrong3 = 0
     for i in range(len(predictions)):
         expectedChordIndices = np.where(nnOutputs[i] == 1)[0]
 
@@ -77,19 +82,45 @@ def test(model):
         threshold = 0.5
         predictedChordIndices = np.where(predictions[i] >= threshold)[0]
         # Or indices of n biggest numbers (n is length of expected indices)
-        #  predictedChordIndices = (-predictions[i]).argsort()[: len(expectedChordIndices)]
+        predictedChordIndices2 = (-predictions[i]).argsort()[: len(expectedChordIndices)]
 
         for expected in expectedChordIndices:
             if expected in predictedChordIndices:
                 right += 1
             else:
                 wrong += 1
+            if expected in predictedChordIndices2:
+                right2 += 1
+            else:
+                wrong2 += 1
+
+            # Probably the most important one: if predictions above the
+            # threshold match
+            a = expectedChordIndices.copy()
+            #  b = predictedChordIndices.copy()
+            b = [predictedChordIndices[i] for i in range(len(predictedChordIndices)) if predictedChordIndices[i] > threshold]
+            np.sort(a)
+            np.sort(b)
+            if np.array_equiv(a, b):
+                right3 += 1
+            else:
+                wrong3 += 1
+
 
         accuracy = 100 * right / (right + wrong)
+        accuracy2 = 100 * right2 / (right2 + wrong2)
+        accuracy3 = 100 * right3 / (right3 + wrong3)
         #  print("Expected", expected.ljust(7), ", predicted", predicted.ljust(7),
                 #  " | Accuracy: ", "{:.4f}".format(accuracy) + "%")
         print("Accuracy: ", "{:.4f}".format(accuracy) + "% ", end = "\r")
-    print("Accuracy: ", "{:.4f}".format(accuracy) + "% ")
+    print("Accuracy by threshold: ", "{:.4f}".format(accuracy) + "% (right|wrong:", str(right) + "|" + str(wrong) + ")")
+    print("Accuracy by n max values: ", "{:.4f}".format(accuracy2) + "% ")
+    print("Accuracy by all values above threshold: ", "{:.4f}".format(accuracy3) + "% ")
+
+    #  plt.plot(nnOutputs[0], label="expected")
+    #  plt.plot(predictions[0], label="predicted")
+    #  plt.title("Output one")
+    #  plt.show()
 
     print("Testing finished")
 
@@ -98,8 +129,11 @@ def predict(model, nnInputs, sampleRate):
     # Pass the noteMags to the neural network to get the chord for each frame
     predictions = model.predict(nnInputs)
 
+    for i in range(len(predictions)):
+        plt.plot(predictions[i], label="predicted")
+    plt.show()
     # Print the predicted chords
-    #  print("Predictions: ")
+    print("Predictions:", predictions)
     #  lastIndex = -1
     #  for i in range(len(predictions)):
         #  confidence = max(predictions[i])
@@ -151,8 +185,9 @@ def main():
 
         # Predict
         else:
-            nnInputs, nnOutputs, sampleRate = process_audio.processAudio(
+            nnInputs, nnOutputs, sampleRate = process_audio.processNotes(
                     path=sys.argv[1], training=False, verbose=True)
+            nnInputs = np.transpose(np.transpose(nnInputs)[0: settings.fs // 4])
             predict(model, nnInputs, sampleRate)
 
 ###############

@@ -133,6 +133,12 @@ def main():
             # Get all notes for each instrument (.wav files in settings.notesPath/instrument)
             useNotesFiles = misc.ls(settings.notesPath + "/" + instrumentsUsed[i])
 
+            # Filter out those with orders allowed in settings
+            for f in useNotesFiles.copy():
+                order = [int(c) for c in f if c.isdigit()][0]
+                if order < settings.minNoteOrder or order > settings.maxNoteOrder:
+                    useNotesFiles.remove(f)
+
             # If it is a mp3 file, check if there is a wav with the same name. If
             # not, convert it to a wav file with the same name
             useNotesFilesBackup = useNotesFiles.copy()

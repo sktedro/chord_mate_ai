@@ -117,11 +117,12 @@ def parseArgs():
         print("Unknown target:", sys.argv[1])
         quit(0)
 
+    # 410kB per wav file with 816 inputs and 12 outputs
     if sys.argv[2] == "notes":
         dataDir = settings.noteDetDataDir
         audioDir = settings.generatedNotesPath
         processFunction = process_audio.processNotes
-        fileDataLimit = 1000
+        fileDataLimit = 10000
     elif sys.argv[2] == "chords":
         dataDir = settings.dataDir
         audioDir = settings.chordsPath

@@ -56,7 +56,7 @@ def getNotesStringsArray(semitoneChar):
             "C0", "Db0", "D0", "Eb0", "E0", "F0",
             "Gb0", "G0", "Ab0", "A0", "Bb0", "B0"])
 
-    for i in range(8):
+    for i in range(7):
         notes = np.concatenate(
                 (notes, np.char.replace(notes[0: 12], "0", str(i + 1))))
 

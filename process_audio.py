@@ -41,7 +41,11 @@ def cropByLoudness(inputSignal, verbose):
         if i < len(zeroPaddedSignal) - sampleSize:
             samples.append(zeroPaddedSignal[i: i + sampleSize])
 
-    zeroPaddedSignal = np.array(zeroPaddedSignal / max(abs(zeroPaddedSignal))).astype(np.float32)
+    sigMax = max(abs(zeroPaddedSignal))
+    if sigMax == 0:
+        print("A file is silent")
+        return []
+    zeroPaddedSignal = np.array(zeroPaddedSignal / sigMax).astype(np.float32)
 
     loudness = []
     for sample in samples:
@@ -106,8 +110,23 @@ def processNotes(path, training, verbose):
     # Perform the fourier transform
     freqs, magnitudes = fourier_transform.fourier_transform(samples, sampleRate, verbose)
 
-    # Arrays where the acquired data will be written
-    nnInputs = magnitudes
+    # Crop the magnitudes to only the frequency bins that are useful to us
+    notes, noteFreqs = misc.getNoteFreqs()
+    freqsToPass = []
+    fftResolution = 12
+    for noteFreq in noteFreqs:
+        freqBin = np.arange(noteFreq - fftResolution / 2, noteFreq + fftResolution / 2, 1)
+        for f in freqBin:
+            freqsToPass.append(f)
+    freqsToPass = np.unique(np.round(freqsToPass).astype(np.int16))
+
+    nnInputs = []
+    for mags in magnitudes:
+        tmpInputs = []
+        for f in freqsToPass:
+            tmpInputs.append(mags[f])
+        nnInputs.append(tmpInputs)
+
 
     nnOutputs = []
     if training:
