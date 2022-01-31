@@ -123,6 +123,9 @@ def newModel():
 def saveModel(model):
     if settings.modelPath.split("/")[-1] in ls("./"):
         subprocess.run(
+                ["rm", "-rf", settings.modelPath + "_backup"],
+                stdout=subprocess.PIPE)
+        subprocess.run(
                 ["mv", settings.modelPath, settings.modelPath + "_backup"], 
                 stdout=subprocess.PIPE)
     model.save(settings.modelPath)

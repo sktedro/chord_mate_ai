@@ -92,5 +92,4 @@ trainingEpochs = 1
 inputsPerTraining = 500000
 
 # Number of training inputs after which the model should be recalculated
-#  [512 1024 2048]. Others seem to converge
 batchSize = 32

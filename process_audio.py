@@ -117,12 +117,17 @@ def cropByLoudness(inputSignal, verbose):
 
     meter = pyln.Meter(sampleSize)
     samples = []
+
+    maxVal = max(abs(inputSignal))
+    if maxVal == 0:
+        return []
+
     zeroPaddedSignal = np.concatenate((np.array(inputSignal), np.zeros(sampleSize)))
     for i in np.arange(0, len(inputSignal), sampleSize):
         if i < len(zeroPaddedSignal) - sampleSize:
             samples.append(zeroPaddedSignal[i: i + sampleSize])
 
-    zeroPaddedSignal = np.array(zeroPaddedSignal / max(abs(zeroPaddedSignal))).astype(np.float32)
+    zeroPaddedSignal = np.array(zeroPaddedSignal / maxVal).astype(np.float32)
 
     loudness = []
     for sample in samples:
