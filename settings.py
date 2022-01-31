@@ -89,7 +89,7 @@ trainingEpochs = 1
 
 # This divides the training data to chunks of size inputsPerTraining
 # Lower this number if the RAM limit is getting exceeded
-inputsPerTraining = 500000
+inputsPerTraining = 1000000
 
 # Number of training inputs after which the model should be recalculated
 batchSize = 32

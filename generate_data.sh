@@ -10,9 +10,11 @@ echo "Starting. To stop, please remove the 'continue generating' file and wait"
 touch continue_generating
 
 while [ -f continue_generating ]; do
-  echo "Generating"
+  amount=10
+  instruments=$(($RANDOM % 10 + 1))
+  echo "Generating $1 data using $2 processes while each generates $amount chords consisting of $instruments instruments"
   for i in $(seq 1 $2); do 
-    python3 generate_chords.py 10 $(($RANDOM % 10 + 1)) >/dev/null & 
+    python3 generate_chords.py "$amount" "$instruments" >/dev/null & 
     echo "Starting process $!"
   done
 
