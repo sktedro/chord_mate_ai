@@ -1,9 +1,18 @@
 from os import environ
 # Disable the GPU because of tensorflow
+<<<<<<< HEAD:detect_chords.py
 #  environ["CUDA_VISIBLE_DEVICES"] = "-1"
 environ['TF_CPP_MIN_LOG_LEVEL'] = "3"
 
 from tensorflow import keras
+=======
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+import tensorflow as tf
+from pydub import AudioSegment
+from scipy.io import wavfile
+from scipy import signal
+from math import e
+>>>>>>> parent of a629d91... Backing up. Achieved >90% accuracy:chord_mate_ai.py
 import sys
 import numpy as np
 
@@ -28,8 +37,6 @@ def init():
     quit(0)
 
 def train(model):
-    print("Training started, model saved")
-
     # Load the training data from trainingDataPath (defined in settings.py)
     nnInputs, nnOutputs = misc.loadData(settings.dataDir, settings.trainingDataFileName)
 
@@ -56,13 +63,8 @@ def train(model):
     print("Training finished, model saved")
 
 def test(model):
-    print("Testing started")
-
     # Load the training data from trainingDataPath (defined in settings.py)
     nnInputs, nnOutputs = misc.loadData(settings.dataDir, settings.testingDataFileName)
-
-    # Shuffle the data
-    nnInputs, nnOutputs = misc.shuffleData(nnInputs, nnOutputs)
 
     # Just an array of all 144 chords
     chordsStrings = misc.getChordsStringsArray()
@@ -83,8 +85,8 @@ def test(model):
         accuracy = 100 * right / (right + wrong)
         #  print("Expected", expected.ljust(7), ", predicted", predicted.ljust(7),
                 #  " | Accuracy: ", "{:.4f}".format(accuracy) + "%")
-        print("Accuracy: ", "{:.4f}".format(accuracy) + "% ", end = "\r")
-    print("Accuracy: ", "{:.4f}".format(accuracy) + "% ")
+        print("Accuracy: ", "{:.4f}".format(accuracy) + "%", end = "\r")
+    print("Accuracy: ", "{:.4f}".format(accuracy) + "%")
 
     print("Testing finished")
 
@@ -125,7 +127,6 @@ def predict(model, nnInputs, sampleRate):
 ##########
 
 def main():
-    print("==================================================")
     # Whatever the user does, he needs to specify at least one argument
     argsCount = len(sys.argv)
     if argsCount < 2:

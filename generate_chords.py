@@ -227,13 +227,13 @@ def main():
             useNotes = getNotesInChord(plainChord, chordType, orders[i])
 
             # Filter the notes files to ones of the instrument picked
-            useNotesFiles = notesFiles[instruments.index(instrumentsUsed[i])].copy()
+            useNotesFiles = notesFiles[instruments.index(instrumentsUsed[i])]
 
             # !! Gb is the same as F# and so on! It needs to be accepted
-            useNotes = [getNoteSynonyms(note) for note in useNotes].copy()
+            useNotes = [getNoteSynonyms(note) for note in useNotes]
 
             # Filter the note files to ones contained in the picked chord
-            useNotesFilesBackup = useNotesFiles.copy()
+            useNotesFilesBackup = useNotesFiles
             useNotesFiles = []
             for noteSynonyms in useNotes:
                 actNoteFiles = []
@@ -246,10 +246,10 @@ def main():
 
             # If it is a mp3 file, check if there is a wav with the same name. If
             # not, convert it to a wav file with the same name
-            useNotesFilesBackup = useNotesFiles.copy()
+            useNotesFilesBackup = useNotesFiles
             useNotesFiles = []
             for actNotesFiles in useNotesFilesBackup:
-                actNotesFilesBackup = actNotesFiles.copy()
+                actNotesFilesBackup = actNotesFiles
                 actNotesFiles = []
                 for fileName in actNotesFilesBackup:
                     if ".mp3" in fileName:
@@ -317,10 +317,12 @@ def main():
         print("Signal cropped to", "{:.2f}".format(minLen / sampleRate), "seconds")
 
         # Trim the signals by the minimum length of the files
-        signalsBackup = signals.copy()
+        signalsBackup = signals
         signals = []
         for signal in signalsBackup:
             signals.append(signal[: int(minLen)])
+            # We can also use some offset since many files end with silence
+            #  signals.append(signal[: int(0.95 * minLen)])
 
         # Sum the signals
         signal = np.array(sum(signals))

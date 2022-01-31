@@ -108,15 +108,15 @@ noteDetBatchSize = 32
 # Chord detection settings
 
 hiddenLayersActivationFn = "tanh"
-outputLayerActivationFn = "tanh"
+#  outputLayerActivationFn = "tanh"
 optimizer = "adam"
-lossFunction = "mean_squared_error"
+#  lossFunction = "mean_squared_error"
 
 # Better settings for categorization
 #  hiddenLayersActivationFn = "tanh"
-#  outputLayerActivationFn = "softmax"
+outputLayerActivationFn = "softmax"
 #  optimizer = "adam"
-#  lossFunction = "categorical_crossentropy"
+lossFunction = "categorical_crossentropy"
 
 # Layers:
 # Input layer:
@@ -126,21 +126,25 @@ lossFunction = "mean_squared_error"
     # Outputs: Chords (A, A#, ..., G)(major, minor, 7, 5, ...)
     # Outputs amount: 12 * 12 = 144
 
-# Best: 90.3%
-#  nnNodes = [96, 256, 512, 256, 144]
+# Best: 66%
+#  nnNodes = [96, 144]
 
-nnNodes = [96, 512, 1024, 512, 144]
+#  nnNodes = [96, 512, 144]
 
-# Achieved 90% accuracy
-#  nnNodes = [96, 192, 384, 1024, 576, 288, 144]
+# Achieved 74% accuracy
+nnNodes = [96, 192, 384, 1024, 576, 288, 144]
 
 # Epochs to train for in one training cycle
+<<<<<<< HEAD
 trainingEpochs = 3
+=======
+trainingEpochs = 5
+>>>>>>> parent of a629d91... Backing up. Achieved >90% accuracy
 
 # This divides the training data to chunks of size inputsPerTraining
 # Lower this number if the RAM limit is getting exceeded
-inputsPerTraining = 500000
+inputsPerTraining = 100000
 
 # Number of training inputs after which the model should be recalculated
 #  [512 1024 2048]. Others seem to converge
-batchSize = 32
+batchSize = 128
