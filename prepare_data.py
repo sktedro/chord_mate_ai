@@ -11,6 +11,108 @@ import misc
 ## FUNCTIONS ##
 ###############
 
+def processNotes(path, training, verbose):
+    # Get the file name and convert to wav if needed
+    fileName = getFileName(path)
+
+    # Read the wav file
+    sampleRate, samples = wavfile.read(path)
+    if sampleRate != 44100:
+        print("Sorry, no other sampling frequency than 44100Hz is currently supported")
+        quit(0)
+
+    # Perform the fourier transform
+    freqs, magnitudes = process_audio.fourier_transform(samples, sampleRate, verbose)
+
+    # Crop the magnitudes to only the frequency bins that are useful to us
+    notes, noteFreqs = misc.getNoteFreqs()
+    freqsToPass = []
+    fftResolution = 12
+    for noteFreq in noteFreqs:
+        freqBin = np.arange(noteFreq - fftResolution / 2, noteFreq + fftResolution / 2, 1)
+        for f in freqBin:
+            freqsToPass.append(f)
+    freqsToPass = np.unique(np.round(freqsToPass).astype(np.int16))
+
+    nnInputs = []
+    for mags in magnitudes:
+        tmpInputs = []
+        for f in freqsToPass:
+            tmpInputs.append(mags[f])
+        nnInputs.append(tmpInputs)
+
+
+    nnOutputs = []
+    if training:
+        # Get note strings in an array shaped the same as predictions
+        notesStringsSharp = misc.getNotesStringsArray(semitoneChar="#")
+        notesStringsFlat = misc.getNotesStringsArray(semitoneChar="b")
+
+        notes = fileName.split("_")[1: -1]
+        output = np.zeros(12)
+        for note in notes:
+            if note in notesStringsSharp:
+                index = np.where(notesStringsSharp == note)
+            elif note in notesStringsFlat:
+                index = np.where(notesStringsFlat == note)
+            else:
+                print("Invalid file name:", fileName)
+                quit(1)
+            if len(index) > 0:
+                index = index[0]
+            output[index % 12] = 1.0
+        print("Notes contained:",
+                [str(notesStringsSharp[i]).replace("0", "")
+                    for i in range(len(output)) if output[i] == 1])
+
+        for i in range(len(nnInputs)):
+            nnOutputs.append(output)
+
+    nnInputs = np.array(nnInputs)
+    nnOutputs = np.array(nnOutputs)
+    #  print(nnInputs.shape)
+    #  print(nnOutputs.shape)
+    #  print(nnInputs)
+    #  print(nnOutputs)
+
+    return nnInputs, nnOutputs, sampleRate
+
+
+def processChords(path, training, verbose):
+    # Get the file name and convert to wav if needed
+    fileName = getFileName(path)
+
+    # Read the wav file
+    sampleRate, samples = wavfile.read(path)
+    if sampleRate != 44100:
+        print("Sorry, no other sampling frequency than 44100Hz is currently supported")
+        quit(0)
+
+    # Perform the fourier transform
+    freqs, magnitudes = process_audio.fourier_transform(samples, sampleRate, verbose)
+
+    # Get notes, exact notes freqs and magnitudes
+    notes, noteFreqs, noteMags = getNoteMagnitudes(magnitudes, freqs)
+
+    # Arrays where the acquired data will be written
+    nnInputs = noteMags
+
+    nnOutputs = []
+    if training:
+        # Get chords strings in an array shaped the same as predictions
+        chordsStrings = misc.getChordsStringsArray()
+
+        chordIndex = chordsStrings.index(fileName.split("_")[1])
+        output = np.zeros(144)
+        output[chordIndex] = 1.0
+        for i in range(len(noteMags)):
+            nnOutputs.append(output)
+
+    nnInputs = np.array(nnInputs)
+    nnOutputs = np.array(nnOutputs)
+
+    return nnInputs, nnOutputs, sampleRate
+
 def saveData(dataDir, newInputs, newOutputs, fileName, fileNumber, fileDataLimit):
     print("Saving the data")
 
@@ -125,8 +227,8 @@ def parseArgs():
         fileDataLimit = 10000
     elif sys.argv[2] == "chords":
         dataDir = settings.dataDir
-        audioDir = settings.chordsPath
-        processFunction = process_audio.processAudio
+        audioDir = settings.generatedChordsPath
+        processFunction = process_audio.processChords
         fileDataLimit = 150000 # TODO
     else:
         print("Unknown target:", sys.argv[2])

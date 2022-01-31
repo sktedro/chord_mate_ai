@@ -8,7 +8,6 @@ import matplotlib.pyplot as plt
 import struct
 import settings
 import misc
-import process_audio
 
 ######################
 ## GLOBAL VARIABLES ##
@@ -282,7 +281,7 @@ def main():
             # Crop the signal by loudness (remove the quiet part)
             croppedSignal = []
             for sig in np.transpose(signal):
-                sig = process_audio.cropByLoudness(sig, verbose = False)
+                sig = misc.cropByLoudness(sig, verbose = False)
 
                 if len(sig) < settings.fftWidth:
                     print("One of the files is totally quiet. Continuing with the next chord.")
@@ -333,12 +332,12 @@ def main():
         # (they should be named chord_C_0.wav, chord_C_1.wav, chord_C#m_0.wav, ...)
         fileName = "chord_" + chord + "_"
 
-        # Create settings.chordsPath dir if it does not exist
-        subprocess.call(["mkdir", "-p", settings.chordsPath])
+        # Create settings.generatedChordsPath dir if it does not exist
+        subprocess.call(["mkdir", "-p", settings.generatedChordsPath])
 
         # If there is no file with that name, the number following should be
         # zero. Otherwise, just add 1
-        existingFiles = misc.ls(settings.chordsPath)
+        existingFiles = misc.ls(settings.generatedChordsPath)
         existingFiles = [f for f in existingFiles if fileName in f]
         if len(existingFiles) == 0:
             fileName += "0"
@@ -348,8 +347,8 @@ def main():
             fileName += str(highestNum + 1)
 
         # Write the signal to a file
-        wavfile.write(settings.chordsPath + "/" + fileName + ".wav", sampleRate, signal)
-        print("Chord generated to", settings.chordsPath + "/" + fileName + ".wav")
+        wavfile.write(settings.generatedChordsPath + "/" + fileName + ".wav", sampleRate, signal)
+        print("Chord generated to", settings.generatedChordsPath + "/" + fileName + ".wav")
 
 if __name__ == "__main__":
     main()

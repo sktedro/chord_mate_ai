@@ -10,7 +10,7 @@ fs = 44100
 # Training .wav files are expected in chordsPath directory and with names like
 # chord_A5_0.wav, chord_E_1.wav, ...
 # Do not change this if you don't know what you're doing!
-chordsPath = "./audio/chords"
+generatedChordsPath = "./audio/chords_generated"
 generatedNotesPath = "./audio/notes_generated"
 
 # Do not change this if you don't know what you're doing!
