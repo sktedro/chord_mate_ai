@@ -7,11 +7,17 @@ import wave
 import subprocess
 from scipy import signal
 from pydub.playback import play
-from scipy.io import wavfile
+
 import pyloudnorm as pyln
 
 import misc
 import settings
+
+from scipy.io import wavfile
+
+###############
+## FUNCTIONS ##
+###############
 
 def normalizeSamples(samples, sampleCount):
     # Subtract the average
@@ -56,6 +62,7 @@ def plotDft(freqs, magnitudes):
 Input: Path to a file, verbosity boolean
 Output: Frequencies and their magnitudes, sample rate
 """
+
 def fourier_transform(samples, sampleRate, verbose):
     sampleCount = len(samples)
     audioLength = sampleCount / sampleRate
@@ -93,10 +100,6 @@ def fourier_transform(samples, sampleRate, verbose):
 
     return freqs, magnitudes
 
-###############
-## FUNCTIONS ##
-###############
-
 def plotSpectrogram(frequencies, spectrogram, audioLength):
     time = np.arange(0, audioLength, audioLength / len(spectrogram[0]))
     print(len(spectrogram[0]))
@@ -114,16 +117,17 @@ def cropByLoudness(inputSignal, verbose):
 
     meter = pyln.Meter(sampleSize)
     samples = []
+
+    maxVal = max(abs(inputSignal))
+    if maxVal == 0:
+        return []
+
     zeroPaddedSignal = np.concatenate((np.array(inputSignal), np.zeros(sampleSize)))
     for i in np.arange(0, len(inputSignal), sampleSize):
         if i < len(zeroPaddedSignal) - sampleSize:
             samples.append(zeroPaddedSignal[i: i + sampleSize])
 
-    sigMax = max(abs(zeroPaddedSignal))
-    if sigMax == 0:
-        print("A file is silent")
-        return []
-    zeroPaddedSignal = np.array(zeroPaddedSignal / sigMax).astype(np.float32)
+    zeroPaddedSignal = np.array(zeroPaddedSignal / maxVal).astype(np.float32)
 
     loudness = []
     for sample in samples:
@@ -175,82 +179,15 @@ def getFileName(path):
             quit(1)
     return fileName
 
-def processNotes(path, training, verbose):
-    # Get the file name and convert to wav if needed
-    fileName = getFileName(path)
-
-    # Read the wav file
-    sampleRate, samples = wavfile.read(path)
-    if sampleRate != 44100:
-        print("Sorry, no other sampling frequency than 44100Hz is currently supported")
-        quit(0)
-
-    # Perform the fourier transform
-    freqs, magnitudes = fourier_transform(samples, sampleRate, verbose)
-
-    # Crop the magnitudes to only the frequency bins that are useful to us
-    notes, noteFreqs = misc.getNoteFreqs()
-    freqsToPass = []
-    fftResolution = 12
-    for noteFreq in noteFreqs:
-        freqBin = np.arange(noteFreq - fftResolution / 2, noteFreq + fftResolution / 2, 1)
-        for f in freqBin:
-            freqsToPass.append(f)
-    freqsToPass = np.unique(np.round(freqsToPass).astype(np.int16))
-
-    nnInputs = []
-    for mags in magnitudes:
-        tmpInputs = []
-        for f in freqsToPass:
-            tmpInputs.append(mags[f])
-        nnInputs.append(tmpInputs)
-
-
-    nnOutputs = []
-    if training:
-        # Get note strings in an array shaped the same as predictions
-        notesStringsSharp = misc.getNotesStringsArray(semitoneChar="#")
-        notesStringsFlat = misc.getNotesStringsArray(semitoneChar="b")
-
-        notes = fileName.split("_")[1: -1]
-        output = np.zeros(12)
-        for note in notes:
-            if note in notesStringsSharp:
-                index = np.where(notesStringsSharp == note)
-            elif note in notesStringsFlat:
-                index = np.where(notesStringsFlat == note)
-            else:
-                print("Invalid file name:", fileName)
-                quit(1)
-            if len(index) > 0:
-                index = index[0]
-            output[index % 12] = 1.0
-        print("Notes contained:", 
-                [str(notesStringsSharp[i]).replace("0", "")
-                    for i in range(len(output)) if output[i] == 1])
-
-        for i in range(len(nnInputs)):
-            nnOutputs.append(output)
-
-    nnInputs = np.array(nnInputs)
-    nnOutputs = np.array(nnOutputs)
-    #  print(nnInputs.shape)
-    #  print(nnOutputs.shape)
-    #  print(nnInputs)
-    #  print(nnOutputs)
-
-    return nnInputs, nnOutputs, sampleRate
-
-
 def processAudio(path, training, verbose):
     # Get the file name and convert to wav if needed
     fileName = getFileName(path)
 
+    # Get chords strings in an array shaped the same as predictions
+    chordsStrings = misc.getChordsStringsArray()
+
     # Read the wav file
     sampleRate, samples = wavfile.read(path)
-    if sampleRate != 44100:
-        print("Sorry, no other sampling frequency than 44100Hz is currently supported")
-        quit(0)
 
     # Perform the fourier transform
     freqs, magnitudes = fourier_transform(samples, sampleRate, verbose)
@@ -263,9 +200,6 @@ def processAudio(path, training, verbose):
 
     nnOutputs = []
     if training:
-        # Get chords strings in an array shaped the same as predictions
-        chordsStrings = misc.getChordsStringsArray()
-
         chordIndex = chordsStrings.index(fileName.split("_")[1])
         output = np.zeros(144)
         output[chordIndex] = 1.0

@@ -1,9 +1,3 @@
-# Warning
-
-The work is (currently) in progress and it is a mess (I am trying different
-things to see which will work best, so I am not refactoring as much as I
-should)!
-
 # Brief
 
 The idea is a script to which the user inputs an audio file and receives chords

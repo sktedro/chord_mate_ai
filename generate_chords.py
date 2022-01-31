@@ -173,6 +173,28 @@ def getNoteSynonyms(note):
 def chooseNotesFiles(useNotesFiles):
     return [synonyms[np.random.randint(len(synonyms))] for synonyms in useNotesFiles]
 
+# https://www.audiolabs-erlangen.de/resources/MIR/FMP/C1/C1S3_Dynamics.html
+def compute_power(x, Fs):
+    win_len_sec=0.05
+    power_ref=10**(-12)
+    """Computation of the signal power in dB
+
+    Notebook: C1/C1S3_Dynamics.ipynb
+
+    Args:
+        x (np.ndarray): Signal (waveform) to be analyzed
+        Fs (scalar): Sampling rate
+        win_len_sec (float): Length (seconds) of the window (Default value = 0.1)
+        power_ref (float): Reference power level (0 dB) (Default value = 10**(-12))
+
+    Returns:
+        power_db (np.ndarray): Signal power in dB
+    """
+    win_len = round(win_len_sec * Fs)
+    win = np.ones(win_len) / win_len
+    power_db = np.log10(np.convolve(x**2, win, mode='same') / power_ref)
+    return power_db
+
 ##########
 ## MAIN ##
 ##########
@@ -227,13 +249,13 @@ def main():
             useNotes = getNotesInChord(plainChord, chordType, orders[i])
 
             # Filter the notes files to ones of the instrument picked
-            useNotesFiles = notesFiles[instruments.index(instrumentsUsed[i])]
+            useNotesFiles = notesFiles[instruments.index(instrumentsUsed[i])].copy()
 
             # !! Gb is the same as F# and so on! It needs to be accepted
-            useNotes = [getNoteSynonyms(note) for note in useNotes]
+            useNotes = [getNoteSynonyms(note) for note in useNotes].copy()
 
             # Filter the note files to ones contained in the picked chord
-            useNotesFilesBackup = useNotesFiles
+            useNotesFilesBackup = useNotesFiles.copy()
             useNotesFiles = []
             for noteSynonyms in useNotes:
                 actNoteFiles = []
@@ -246,10 +268,10 @@ def main():
 
             # If it is a mp3 file, check if there is a wav with the same name. If
             # not, convert it to a wav file with the same name
-            useNotesFilesBackup = useNotesFiles
+            useNotesFilesBackup = useNotesFiles.copy()
             useNotesFiles = []
             for actNotesFiles in useNotesFilesBackup:
-                actNotesFilesBackup = actNotesFiles
+                actNotesFilesBackup = actNotesFiles.copy()
                 actNotesFiles = []
                 for fileName in actNotesFilesBackup:
                     if ".mp3" in fileName:
@@ -317,12 +339,10 @@ def main():
         print("Signal cropped to", "{:.2f}".format(minLen / sampleRate), "seconds")
 
         # Trim the signals by the minimum length of the files
-        signalsBackup = signals
+        signalsBackup = signals.copy()
         signals = []
         for signal in signalsBackup:
             signals.append(signal[: int(minLen)])
-            # We can also use some offset since many files end with silence
-            #  signals.append(signal[: int(0.95 * minLen)])
 
         # Sum the signals
         signal = np.array(sum(signals))
@@ -335,12 +355,12 @@ def main():
         # (they should be named chord_C_0.wav, chord_C_1.wav, chord_C#m_0.wav, ...)
         fileName = "chord_" + chord + "_"
 
-        # Create settings.generatedChordsPath dir if it does not exist
-        subprocess.call(["mkdir", "-p", settings.generatedChordsPath])
+        # Create settings.chordsPath dir if it does not exist
+        subprocess.call(["mkdir", "-p", settings.chordsPath])
 
         # If there is no file with that name, the number following should be
         # zero. Otherwise, just add 1
-        existingFiles = misc.ls(settings.generatedChordsPath)
+        existingFiles = misc.ls(settings.chordsPath)
         existingFiles = [f for f in existingFiles if fileName in f]
         if len(existingFiles) == 0:
             fileName += "0"
@@ -350,8 +370,8 @@ def main():
             fileName += str(highestNum + 1)
 
         # Write the signal to a file
-        wavfile.write(settings.generatedChordsPath + "/" + fileName + ".wav", sampleRate, signal)
-        print("Chord generated to", settings.generatedChordsPath + "/" + fileName + ".wav")
+        wavfile.write(settings.chordsPath + "/" + fileName + ".wav", sampleRate, signal)
+        print("Chord generated to", settings.chordsPath + "/" + fileName + ".wav")
 
 if __name__ == "__main__":
     main()

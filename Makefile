@@ -1,5 +1,5 @@
 SCRIPT=chord_mate_ai.py
-GENSCRIPT=gen_random.sh
+GENSCRIPT=generate_data.sh
 PREPSCRIPT=prepare_data.py
 
 # TODO If there is a file in the first argument, run prediction. Otherwise,
@@ -11,17 +11,13 @@ all:
 init: 
 	python3 ${SCRIPT} init
 
-# Generate chords from notes (random number of instruments, in an infinite loop)
-gen:
-	./${GENSCRIPT}
+# Generate training data
+gen_train:
+	./${GENSCRIPT} train 10
 
-# Prepare the training data from all chords generated 
-prep_train: 
-	python3 ${PREPSCRIPT} train
-
-# Prepare the testing data from all chords generated 
-prep_test: 
-	python3 ${PREPSCRIPT} test
+# Generate testing data
+gen_test:
+	./${GENSCRIPT} test 10
 
 # Train the neural network with prepared training data until stopped by user
 train:
@@ -32,4 +28,4 @@ test:
 	python3 ${SCRIPT} test
 
 clean:
-	rm -rf __pycache__ data*/*_backup.npz ./nn_*_backup
+	rm -rf __pycache__ data/*_backup.npz

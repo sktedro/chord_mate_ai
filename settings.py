@@ -1,8 +1,5 @@
 # All settings in one place
 
-# Sampling frequency
-fs = 44100
-
 ###########
 ## PATHS ##
 ###########
@@ -10,8 +7,7 @@ fs = 44100
 # Training .wav files are expected in chordsPath directory and with names like
 # chord_A5_0.wav, chord_E_1.wav, ...
 # Do not change this if you don't know what you're doing!
-generatedChordsPath = "./audio/chords_generated"
-generatedNotesPath = "./audio/notes_generated"
+chordsPath = "./audio/chords"
 
 # Do not change this if you don't know what you're doing!
 notesPath = "./audio/notes"
@@ -21,20 +17,14 @@ audioPath = "./audio"
 
 # Do not change these if you don't know what you're doing!
 dataDir = "./data"
-noteDetDataDir = "./data_note_detection"
 trainingDataFileName = "training_data"
 testingDataFileName = "testing_data"
-
-#  trainingDataFileName = "testing_data"
-#  testingDataFileName = "training_data"
-
 # If the data file already exists, it will be loaded and new data will be 
 # appended. Otherwise, it will be created
 # To test with the training data, uncomment this:
 #  testingDataFileName = "training_data"
 
 modelPath = "./nn"
-noteDetModelPath = "./nn_note_detection"
 
 ######################
 ## AUDIO PROCESSING ##
@@ -63,60 +53,20 @@ mixInstruments = True
 # higher order)
 noteDuplicateProbability = 0.5
 
-#####################
-## NOTE GENERATION ##
-#####################
-
-minNoteOrder = 0
-maxNoteOrder = 7
-
-noteGenMixInstruments = True
-
 ##############
 ## TRAINING ##
 ##############
 
-# General settings
-
-threadLimit = 7
-
-
-# Note detection settings
-
-noteDetHiddenLayersActivationFn = "sigmoid"
-noteDetOutputLayerActivationFn = "sigmoid"
-
-noteDetOptimizer = "adam"
-
-#  noteDetLossFunction = "mean_squared_error"
-noteDetLossFunction = "binary_crossentropy"
-
-#  noteDetNnNodes = [816, 256, 12]
-noteDetNnNodes = [816, 1024, 128, 12]
-
-# Epochs to train for in one training cycle
-noteDetTrainingEpochs = 5
-
-# This divides the training data to chunks of size inputsPerTraining
-# Lower this number if the RAM limit is getting exceeded
-noteDetInputsPerTraining = 500000
-
-# Number of training inputs after which the model should be recalculated
-noteDetBatchSize = 32
-
-
-# Chord detection settings
-
 hiddenLayersActivationFn = "tanh"
-#  outputLayerActivationFn = "tanh"
+outputLayerActivationFn = "tanh"
 optimizer = "adam"
-#  lossFunction = "mean_squared_error"
+lossFunction = "mean_squared_error"
 
 # Better settings for categorization
 #  hiddenLayersActivationFn = "tanh"
-outputLayerActivationFn = "softmax"
+#  outputLayerActivationFn = "softmax"
 #  optimizer = "adam"
-lossFunction = "categorical_crossentropy"
+#  lossFunction = "categorical_crossentropy"
 
 # Layers:
 # Input layer:
@@ -126,25 +76,20 @@ lossFunction = "categorical_crossentropy"
     # Outputs: Chords (A, A#, ..., G)(major, minor, 7, 5, ...)
     # Outputs amount: 12 * 12 = 144
 
-# Best: 66%
-#  nnNodes = [96, 144]
+# Best: 90.3%
+#  nnNodes = [96, 256, 512, 256, 144]
 
-#  nnNodes = [96, 512, 144]
+nnNodes = [96, 512, 1024, 512, 144]
 
-# Achieved 74% accuracy
-nnNodes = [96, 192, 384, 1024, 576, 288, 144]
+# Achieved 90% accuracy
+#  nnNodes = [96, 192, 384, 1024, 576, 288, 144]
 
 # Epochs to train for in one training cycle
-<<<<<<< HEAD
-trainingEpochs = 3
-=======
-trainingEpochs = 5
->>>>>>> parent of a629d91... Backing up. Achieved >90% accuracy
+trainingEpochs = 1
 
 # This divides the training data to chunks of size inputsPerTraining
 # Lower this number if the RAM limit is getting exceeded
-inputsPerTraining = 100000
+inputsPerTraining = 1000000
 
 # Number of training inputs after which the model should be recalculated
-#  [512 1024 2048]. Others seem to converge
-batchSize = 128
+batchSize = 32

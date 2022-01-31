@@ -24,15 +24,15 @@ def shuffleData(inputs, outputs):
         outputs[i] = outputsBackup[destIndices[i]]
     return inputs, outputs
 
-def loadData(dirName, fileName):
+def loadData(fileName):
     print("Loading the data")
     inputs = []
     outputs = []
-    for f in ls(dirName):
+    for f in ls(settings.dataDir):
         if (not fileName in f) or "backup" in f:
             continue
         print(f)
-        data = np.load(dirName + "/" + f, allow_pickle=True)
+        data = np.load(settings.dataDir + "/" + f, allow_pickle=True)
         if len(inputs) == 0 and len(outputs) == 0:
             inputs = data["inputs"]
             outputs = data["outputs"]
@@ -45,22 +45,6 @@ def loadData(dirName, fileName):
         quit(0)
 
     return inputs, outputs
-
-def getNotesStringsArray(semitoneChar):
-    if semitoneChar == "#":
-        notes = np.array([
-            "C0", "C#0", "D0", "D#0", "E0", "F0",
-            "F#0", "G0", "G#0", "A0", "A#0", "B0"])
-    elif semitoneChar == "b":
-        notes = np.array([
-            "C0", "Db0", "D0", "Eb0", "E0", "F0",
-            "Gb0", "G0", "Ab0", "A0", "Bb0", "B0"])
-
-    for i in range(7):
-        notes = np.concatenate(
-                (notes, np.char.replace(notes[0: 12], "0", str(i + 1))))
-
-    return notes
 
 def getChordsStringsArray():
     major = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
@@ -103,47 +87,47 @@ def getNoteFreqs():
 
 
 # TODO Also input some history or metadata?
-def newModel(nnNodes, hiddenActivationFn, outputActivationFn, opt, lossFn):
+def newModel():
     # Create a sequential model
     model = keras.Sequential()
 
     # Input layer
     model.add(
             keras.Input(
-                shape=(nnNodes[0], )))
+                shape=(settings.nnNodes[0], )))
 
     # Hidden layers
-    for nodes in nnNodes[1: -1]:
+    for nodes in settings.nnNodes[1: -1]:
         model.add(
                 keras.layers.Dense(
                     nodes,
-                    activation=hiddenActivationFn))
+                    activation=settings.hiddenLayersActivationFn))
     # Output layer
     model.add(
             keras.layers.Dense(
-                nnNodes[-1],
-                activation=outputActivationFn))
+                settings.nnNodes[-1],
+                activation=settings.outputLayerActivationFn))
 
     # Compiling the model
     model.compile(
-            optimizer=opt,
-            loss=lossFn,
+            optimizer=settings.optimizer,
+            loss=settings.lossFunction,
             metrics=["accuracy"])
 
     # To complete the model, a prediction must be made for whatever reason
-    randomInput = np.array([np.random.random(nnNodes[0])])
+    randomInput = np.array([np.random.random(settings.nnNodes[0])])
     randomPredict = model.predict(randomInput)
 
     return model
 
-def saveModel(model, path):
-    if path.split("/")[-1] in ls("./"):
+def saveModel(model):
+    if settings.modelPath.split("/")[-1] in ls("./"):
         subprocess.run(
-                ["rm", "-rf", path + "_backup"], 
+                ["rm", "-rf", settings.modelPath + "_backup"],
                 stdout=subprocess.PIPE)
         subprocess.run(
-                ["mv", path, path + "_backup"], 
+                ["mv", settings.modelPath, settings.modelPath + "_backup"], 
                 stdout=subprocess.PIPE)
-    model.save(path)
+    model.save(settings.modelPath)
 
 
