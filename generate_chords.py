@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import struct
 import settings
 import misc
+import process_audio
 
 ######################
 ## GLOBAL VARIABLES ##
@@ -281,7 +282,7 @@ def main():
             # Crop the signal by loudness (remove the quiet part)
             croppedSignal = []
             for sig in np.transpose(signal):
-                sig = misc.cropByLoudness(sig, verbose = False)
+                sig = process_audio.cropByLoudness(sig, verbose = False)
 
                 if len(sig) < settings.fftWidth:
                     print("One of the files is totally quiet. Continuing with the next chord.")

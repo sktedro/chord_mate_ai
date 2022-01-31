@@ -26,13 +26,14 @@ def processNotes(path, training, verbose):
 
     # Crop the magnitudes to only the frequency bins that are useful to us
     notes, noteFreqs = misc.getNoteFreqs()
-    freqsToPass = []
-    fftResolution = 12
-    for noteFreq in noteFreqs:
-        freqBin = np.arange(noteFreq - fftResolution / 2, noteFreq + fftResolution / 2, 1)
-        for f in freqBin:
-            freqsToPass.append(f)
-    freqsToPass = np.unique(np.round(freqsToPass).astype(np.int16))
+    #  freqsToPass = []
+    #  fftResolution = 12
+    #  for noteFreq in noteFreqs:
+        #  freqBin = np.arange(noteFreq - fftResolution / 2, noteFreq + fftResolution / 2, 1)
+        #  for f in freqBin:
+            #  freqsToPass.append(f)
+    #  freqsToPass = np.unique(np.round(freqsToPass).astype(np.int16))
+    freqsToPass = noteFreqs
 
     nnInputs = []
     for mags in magnitudes:
@@ -94,7 +95,7 @@ def processChords(path, training, verbose):
     # Get notes, exact notes freqs and magnitudes
     notes, noteFreqs, noteMags = getNoteMagnitudes(magnitudes, freqs)
 
-    # Arrays where the acquired data will be written
+    # Arrays where the acquired data will be stored
     nnInputs = noteMags
 
     nnOutputs = []
