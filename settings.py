@@ -86,21 +86,17 @@ lossFunction = "binary_crossentropy"
     # Outputs: Chords (A, A#, ..., G)(major, minor, 7, 5, ...)
     # Outputs amount: 12 * 12 = 144
 
+# 92.3%
 nnNodes = [96, 256, 256, 144]
-
-#  nnNodes = [96, 512, 1024, 512, 144]
-
+# 91.4%
 #  nnNodes = [96, 256, 512, 512, 256, 144]
-
-#  nnNodes = [96, 192, 384, 1024, 576, 288, 144]
 
 # Epochs to train for in one training cycle
 trainingEpochs = 1
 
 # This divides the training data to chunks of size inputsPerTraining
 # Lower this number if the RAM limit is getting exceeded
-#  inputsPerTraining = 500000
-inputsPerTraining = 10000000
+inputsPerTraining = 100000
 
 # Number of training inputs after which the model should be recalculated
-batchSize = 128
+batchSize = 32

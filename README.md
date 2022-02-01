@@ -7,6 +7,16 @@ As I tried to do this using javascript, I learned that JS is really not made
 for this, so this repository is my attempt to use python instead. However,
 note that this project may never be finished.
 
+UPDATE: As I achieved ~92% accuracy with the testing data and then tested it on
+actual music I realized this is not going to work. This needs a lot more work
+which I currently have no time for. Anyways, I think I proved (at least to
+myself) that the chord detections problem cannot be solved by a simple neural
+network and for now, I am abandoning this project.
+
+If you'd like to see how the ~92% accuracy is holding with actual music, check
+the `riptide_chords.txt` file and compare the chords with ones on the internet.
+(Audio used: https://www.youtube.com/watch?v=uJ_1HMAGb4k&ab)
+
 JS attempt: https://github.com/sktedro/chord_recognizer
 
 
@@ -45,11 +55,7 @@ Make sure you have:
    different files playing the same note (useful if you have notes captured by 
    mic and pickup (for example))
 
-### To generate random chords until stopped
-
-`make gen`
-
-### To generate n chords
+### To generate chords
 
 `python3 gen_chords.py amount instrumentsAmount`
 
@@ -71,13 +77,13 @@ Make sure you have:
    different files playing the same chord (amount of instruments, notes, ... 
    can vary)
 
-### To generate training data from the chords
+You can also generate training and testing data using the `generate_data.sh`
+script or by executing `make gen_train` or `make gen_test`
 
-`make prep_train`
 
-### To generate testing data
+### To generate training or testing data from generated chords
 
-`make prep_test`
+`make prep_train` or `make prep_test`
 
 
 ## Training
@@ -100,15 +106,16 @@ Make sure you have:
 
 # Folder structure
 
- - `chord_mate_ai.py` - main program to run when training or predicting
+ - `chord_mate_ai.py` - main program to run when training, testing or predicting
  - `settings.py` - global variables as settings. All configuration should be 
    done here
- - `gen_chords.py` - generate chords from notes
- - `prepare_data.py` - call process_audio.py for every chord in 
+ - `generate_chords.py` - generate chords from notes
+ - `prepare_data.py` - calls `process_audio.py` for every chord in 
    `./audio/chords/` and by that, create inputs and outputs for the neural 
-   network. Then write that data to `./training_data/`
+   network. Then writes that data to `./training_data/`
  - `process_audio.py` - create and return inputs and outputs for the neural 
    network. If not training, outputs will be an empty array.
+ - `misc.py` - miscellaneous functions
  - `./audio/` - all audio files
  - `./audio/notes/` - notes to generate chords from. Format is explained in
    section Running, Generating chords

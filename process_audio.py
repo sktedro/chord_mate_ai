@@ -179,7 +179,7 @@ def getFileName(path):
         # If it is a mp3, convert it to a wav
         if "mp3" in fileName:
             newFileName = fileName.replace("mp3", "wav")
-            AudioSegment.from_mp3(sys.argv[1]).export(newFileName, format = "wav")
+            AudioSegment.from_mp3(sys.argv[1]).export(path.replace(fileName, newFileName), format = "wav")
         else:
             print("ERROR: The input audio file must be a mp3 or a wav file")
             quit(1)
