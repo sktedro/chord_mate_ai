@@ -11,7 +11,7 @@ touch continue_generating
 
 while [ -f continue_generating ]; do
   amount=10
-  instruments=$(($RANDOM % 10 + 1))
+  instruments=$(($RANDOM % 4 + 1))
   echo "Generating $1 data using $2 processes while each generates $amount chords consisting of $instruments instruments"
   for i in $(seq 1 $2); do 
     python3 generate_chords.py "$amount" "$instruments" >/dev/null & 
