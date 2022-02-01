@@ -173,6 +173,7 @@ def getNoteMagnitudes(ffts, freqs):
 
 def getFileName(path):
     fileName = path.split("/")[-1]
+    newFileName = fileName
     # Get the file and convert it to WAV if needed
     if not "wav" in fileName:
         # If it is a mp3, convert it to a wav
@@ -206,7 +207,7 @@ def processAudio(path, training, verbose):
     # Prep the outputs if training
     nnOutputs = []
     if training:
-        chordIndex = chordsStrings.index(fileName.split("_")[1])
+        chordIndex = chordsStrings.index(path.split("/")[-1].split("_")[1])
         output = np.zeros(144)
         output[chordIndex] = 1.0
         for i in range(len(noteMags)):
