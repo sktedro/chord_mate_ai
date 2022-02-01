@@ -156,6 +156,11 @@ def getNoteMagnitudes(ffts, freqs):
 
     # For each frame passed to the FFT
     for fft in ffts:
+        # Normalize it
+        if max(fft) != 0:
+            fft /= max(fft)
+
+        # Pick only the note frequencies
         mags = []
         for freq in noteFreqs:
             mags.append(fft[int(freq)])
@@ -187,7 +192,7 @@ def processAudio(path, training, verbose):
     chordsStrings = misc.getChordsStringsArray()
 
     # Read the wav file
-    sampleRate, samples = wavfile.read(path)
+    sampleRate, samples = wavfile.read(fileName)
 
     # Perform the fourier transform
     freqs, magnitudes = fourier_transform(samples, sampleRate, verbose)
@@ -195,9 +200,10 @@ def processAudio(path, training, verbose):
     # Get notes, exact notes freqs and magnitudes
     notes, noteFreqs, noteMags = getNoteMagnitudes(magnitudes, freqs)
 
-    # Arrays where the acquired data will be written
+    # Prep the inputs
     nnInputs = noteMags
 
+    # Prep the outputs if training
     nnOutputs = []
     if training:
         chordIndex = chordsStrings.index(fileName.split("_")[1])

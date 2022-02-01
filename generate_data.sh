@@ -24,7 +24,7 @@ while [ -f continue_generating ]; do
   done
   echo "Done generating"
 
-  python3 prepare_data.py "$1" chords
+  python3 prepare_data.py "$1"
 
   rm audio/chords/*
   echo "Done preparing the data"

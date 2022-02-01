@@ -57,12 +57,22 @@ noteDuplicateProbability = 0.5
 ## TRAINING ##
 ##############
 
-hiddenLayersActivationFn = "tanh"
-outputLayerActivationFn = "tanh"
-optimizer = "adam"
-lossFunction = "mean_squared_error"
+# Settings 1: 
+# 67.25%, 70.89%
+#  hiddenLayersActivationFn = "tanh"
+#  outputLayerActivationFn = "tanh"
+#  optimizer = "adam"
+#  lossFunction = "mean_squared_error"
 
-# Better settings for categorization
+# Settings 2: 
+# 85.84%, 87.48%, 87.30%, 88.38%, 87.62%
+hiddenLayersActivationFn = "sigmoid"
+outputLayerActivationFn = "sigmoid"
+optimizer = "adam"
+lossFunction = "binary_crossentropy"
+
+# Settings 3: 
+# 84.68%, 85.54%, 85.55%, 85.81%, 85.56%, 86.61%
 #  hiddenLayersActivationFn = "tanh"
 #  outputLayerActivationFn = "softmax"
 #  optimizer = "adam"
@@ -76,12 +86,12 @@ lossFunction = "mean_squared_error"
     # Outputs: Chords (A, A#, ..., G)(major, minor, 7, 5, ...)
     # Outputs amount: 12 * 12 = 144
 
-# Best: 90.3%
-#  nnNodes = [96, 256, 512, 256, 144]
+nnNodes = [96, 256, 256, 144]
 
-nnNodes = [96, 512, 1024, 512, 144]
+#  nnNodes = [96, 512, 1024, 512, 144]
 
-# Achieved 90% accuracy
+#  nnNodes = [96, 256, 512, 512, 256, 144]
+
 #  nnNodes = [96, 192, 384, 1024, 576, 288, 144]
 
 # Epochs to train for in one training cycle
@@ -89,7 +99,8 @@ trainingEpochs = 1
 
 # This divides the training data to chunks of size inputsPerTraining
 # Lower this number if the RAM limit is getting exceeded
-inputsPerTraining = 1000000
+#  inputsPerTraining = 500000
+inputsPerTraining = 10000000
 
 # Number of training inputs after which the model should be recalculated
-batchSize = 32
+batchSize = 128
