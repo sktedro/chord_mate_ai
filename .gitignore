@@ -4,3 +4,4 @@ __pycache__/
 data*/
 audio/*.mp3
 audio/*.wav
+nn_backup/
